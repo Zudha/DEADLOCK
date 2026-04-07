@@ -34,7 +34,8 @@ public class EscapeRoom {
         System.out.println("\nDi sudut ruangan tertulis:");
         System.out.println("\"SEMUA JAWABAN ADALAH KEBALIKAN\"");
         System.out.println("Angka di dinding: 9999");
-
+        System.out.println("Huruf = posisi alfabet");
+        
         System.out.print("\nMasukkan kode: ");
         String jawab = input.nextLine();
 
@@ -60,7 +61,7 @@ public class EscapeRoom {
         System.out.println("Suara berbisik:");
         System.out.println("\"Jangan percaya pola...\"");
 
-        System.out.print("\nMasukkan waktu (contoh: 1300): ");
+        System.out.print("\nMasukkan waktu: ");
         String jawab = input.nextLine();
 
         if (jawab.equals("1300")) {
