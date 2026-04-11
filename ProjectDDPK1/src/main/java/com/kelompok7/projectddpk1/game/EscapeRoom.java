@@ -1,6 +1,5 @@
 package com.kelompok7.projectddpk1.game;
 
-import com.kelompok7.projectddpk1.game.Maze;
 import java.util.Scanner;
 
 public class EscapeRoom {
@@ -120,6 +119,7 @@ public class EscapeRoom {
                 char move = inputUser.charAt(0);
                 m.movePlayer(move);
             }
+    }
         System.out.println("\nKamu melihat sebuah celah...");
         System.out.println("Cahaya... akhirnya.\n");
 
@@ -128,7 +128,6 @@ public class EscapeRoom {
 
         System.out.println("\n\"KAMU...\"");
         System.out.println("\"TIDAK PERNAH KELUAR DARI SINI.\"");
-    }
 }
     
     static void room4() {
