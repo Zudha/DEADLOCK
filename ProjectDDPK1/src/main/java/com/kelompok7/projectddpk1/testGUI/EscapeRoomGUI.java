@@ -5,6 +5,7 @@ import java.awt.*;
 
 public class EscapeRoomGUI extends JFrame {
 
+    JPanel lamp;
     JTextArea display;
     JTextField input;
     JPanel centerPanel;
@@ -38,6 +39,9 @@ public class EscapeRoomGUI extends JFrame {
 
         add(centerPanel, BorderLayout.CENTER);
         add(input, BorderLayout.SOUTH);
+        
+        lamp = new JPanel();
+        lamp.setBackground(Color.BLACK); // lampu mati
 
         // Inisialisasi Maze
         mazePanel = new MazeGUI(); 
@@ -48,7 +52,15 @@ public class EscapeRoomGUI extends JFrame {
             input.setText("");
             handleInput(userInput);
         });
-
+        
+        lamp = new JPanel() {
+        protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        g.setColor(getBackground());
+        g.fillOval(0, 0, getWidth(), getHeight());
+    }
+};
+        lamp.setPreferredSize(new Dimension(120, 120));
         intro();
         
         setLocationRelativeTo(null);
@@ -64,8 +76,8 @@ public class EscapeRoomGUI extends JFrame {
     void clear() {
         display.setText("");
     }
-
-    void showTextMode() {
+    
+     void showTextMode() {
         centerPanel.removeAll();
         centerPanel.add(new JScrollPane(display), BorderLayout.CENTER);
         centerPanel.revalidate();
@@ -73,12 +85,94 @@ public class EscapeRoomGUI extends JFrame {
         input.requestFocusInWindow();
     }
 
+    void showLampMode() {
+        centerPanel.removeAll();
+
+        JPanel wrapper = new JPanel();
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+        wrapper.setBackground(Color.BLACK);
+
+        lamp.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        wrapper.add(Box.createVerticalGlue());
+        wrapper.add(lamp);
+        wrapper.add(Box.createVerticalStrut(20));
+        wrapper.add(new JScrollPane(display));
+        wrapper.add(Box.createVerticalGlue());
+
+        centerPanel.add(wrapper, BorderLayout.CENTER);
+
+        centerPanel.revalidate();
+        centerPanel.repaint();
+}
+
+        //Kode agar Morse Berjalan
+    void playMorse(String morse){
+        int unit = 225; // durasi
+        input.setEnabled(false);
+        
+        Timer timer = new Timer(unit,null);
+        final int[] i = {0};
+        final boolean[] isOn = {false};
+        final int[] delay = {unit};
+        
+        
+        
+    timer.addActionListener(e -> {
+        if (i[0] >= morse.length()) {
+            timer.stop();
+            lampOff();
+            print("\nMasukkan kode:");
+            state = 7;
+            input.setEnabled(true);
+            return;
+        }
+
+        char c = morse.charAt(i[0]);
+
+        if (c == ' ') {
+        lampOff();
+        isOn[0] = false; // 🔥 PENTING: paksa mati state
+        timer.setDelay(unit * 3); // delay antar karakter
+        i[0]++;
+        return;
+        }
+
+        if (!isOn[0]) {
+            lampOn();
+
+            if (c == '.') timer.setDelay(unit);
+            else if (c == '-') timer.setDelay(unit * 3);
+
+            isOn[0] = true;
+
+        } else {
+            lampOff();
+            timer.setDelay(unit);
+            isOn[0] = false;
+            i[0]++;
+        }
+    });
+        timer.start();
+    }
+        
+         // Menampilkan Labirin
     void showMazeMode() {
         centerPanel.removeAll();
         centerPanel.add(mazePanel, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
         input.requestFocusInWindow();
+    }
+    
+    void lampOn() {
+        lamp.setBackground(Color.WHITE);
+        lamp.repaint();
+    }
+    
+    void lampOff(){
+        lamp.setBackground(Color.BLACK);
+        lamp.repaint();
     }
 
     // --- LOGIKA NARASI SESUAI KODE TEKS ---
@@ -162,12 +256,23 @@ void room4() {
     t.setRepeats(false);
     t.start();
 }
-        
-    
     void room5() {
+        lampOff();
+        showLampMode();
+        clear();
+        print("---ROOM 5: MORSE ---");
+        print("Kamu Melihat Lampu berkedip di ruangan yang kosong.... ");
+        print("Kamu Mencoba untuk memecahkan apa tanda yang dimaksud?!?");
+        
+        String morse = "--... ----. ..--- .....";
+        
+        playMorse(morse);
+    }
+    
+    void room6() {
         showTextMode();
         clear();
-        print("--- ROOM 5: FINAL CODE ---");
+        print("--- ROOM 6: FINAL CODE ---");
         print("Kamu melihat sebuah celah... Cahaya... akhirnya.");
         print("\nSuara kembali terdengar:");
         print("\"KAMU... TIDAK PERNAH KELUAR DARI SINI.\"");
@@ -243,8 +348,15 @@ void room4() {
                 else gameOver();
                 break;
             case 7:
-                if (inputUser.equals("13206")){
+                if (inputUser.equals("7925")) {
                     state = 8;
+                    room6();
+                }
+                else gameOver();
+                break;
+            case 8:
+                if (inputUser.equals("13206")){
+                    state = 9;
                     ending();
                 }
                 else gameOver();
