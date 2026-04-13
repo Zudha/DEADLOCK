@@ -16,6 +16,7 @@ public class EscapeRoomGUI extends JFrame {
         setSize(700, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+        
 
         // Setup Display Area (Area Narasi)
         display = new JTextArea();
@@ -132,18 +133,51 @@ public class EscapeRoomGUI extends JFrame {
         print("Bisikan muncul: \"Jangan percaya arahmu sendiri...\"");
         print("Gunakan W/A/S/D lalu Enter.");
     }
+    
+void room4() {
+    showTextMode();
+    clear();
 
-    void room4() {
+    input.setEnabled(false); //  disable input dulu
+
+    print("--- ROOM 4: REMEMBER ---");
+    print("Kamu memperhatikan sebuah tanda...");
+    print("Yang muncul sesaat...\n");
+
+    String kode = "3602";
+    print(kode);
+
+    Timer t = new Timer(750, e -> {
+        clear();
+        print("--- ROOM 4: REMEMBER ---");
+        print("Tanda itu menghilang...");
+        print("Kamu merasa harus mengingat sesuatu...\n");
+        
+        print("Masukkan Kode: ");
+
+        state = 6;     // pindah ke state input
+        input.setEnabled(true); // input di enabled lagi
+    });
+
+    t.setRepeats(false);
+    t.start();
+}
+        
+    
+    void room5() {
         showTextMode();
         clear();
-        print("--- ROOM 4: FINAL CODE ---");
+        print("--- ROOM 5: FINAL CODE ---");
         print("Kamu melihat sebuah celah... Cahaya... akhirnya.");
         print("\nSuara kembali terdengar:");
         print("\"KAMU... TIDAK PERNAH KELUAR DARI SINI.\"");
         print("\nGabungkan semua angka...");
-        print("Buang yang sama... ambil yang tersisa...");
+        print("Hilangkan yang berulang... ambil yang tersisa...");
+        print("Urutkan Untuk menemukan jalan keluar.....");
         print("\nMasukkan kode akhir:");
     }
+    
+
 
     void ending() {
         clear();
@@ -199,7 +233,20 @@ public class EscapeRoomGUI extends JFrame {
                 }
                 break;
             case 5:
-                if (inputUser.equals("1320")) { state = 6; ending(); } 
+                
+                break;
+            case 6:
+                if (inputUser.equals("3602")) {
+                    state = 7;
+                    room5();
+                }
+                else gameOver();
+                break;
+            case 7:
+                if (inputUser.equals("13206")){
+                    state = 8;
+                    ending();
+                }
                 else gameOver();
                 break;
         }

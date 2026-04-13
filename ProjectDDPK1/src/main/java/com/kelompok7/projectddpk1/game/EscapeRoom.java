@@ -12,8 +12,9 @@ public class EscapeRoom {
         room1();
         room2();
         room3();
-       roommaze();
+        roommaze();
         room4();
+        room5();
         ending();
     }
 
@@ -129,9 +130,35 @@ public class EscapeRoom {
         System.out.println("\n\"KAMU...\"");
         System.out.println("\"TIDAK PERNAH KELUAR DARI SINI.\"");
 }
-    
     static void room4() {
-        System.out.println("\n--- ROOM 4: FINAL CODE ---");
+        System.out.println("\n--- ROOM 4: REMEMBER---");
+        
+        System.out.println("Kamu Memperhatikan sebuah tanda.....");
+        System.out.println("Yang muncul sesaat...");
+        
+        String Reminder = "3602";
+        try {
+            for (int i = 0; i < 2; i++){
+                System.out.println(Reminder);
+                Thread.sleep(500);
+            }
+            } catch (InterruptedException e) {
+                    e.printStackTrace();
+        }
+        System.out.print("\nMasukkan kode akhir: ");
+        
+        String jawab = input.nextLine();
+         
+        if (jawab.equals("3602")) {
+            System.out.println("Pintu terbuka...");
+        } else {
+            gameOver();
+        }
+        
+    }
+    
+    static void room5() {
+        System.out.println("\n--- ROOM 5: FINAL CODE ---");
 
         System.out.println("Gabungkan semua angka...");
         System.out.println("Buang yang sama... ambil yang tersisa...");
@@ -139,7 +166,7 @@ public class EscapeRoom {
         System.out.print("\nMasukkan kode akhir: ");
         String jawab = input.nextLine();
 
-        if (jawab.equals("1320")) {
+        if (jawab.equals("13206")) {
             System.out.println("Pintu terbuka...");
         } else {
             gameOver();

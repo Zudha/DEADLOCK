@@ -57,7 +57,7 @@ public class MazeGUI extends JPanel {
     public boolean isExitReached() {
         return grid[playerY][playerX] == 'E';
     }
-
+// warna buat labirin
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
