@@ -5,9 +5,21 @@ import java.util.Scanner;
 public class EscapeRoom {
 
     static Scanner input = new Scanner(System.in);
+    static PuzzleRooms puzzles;
 
     public static void main(String[] args) {
+        puzzles = new PuzzleRooms(input);
+         System.out.print("Masukkan 'DEBUG' untuk mode test (kosongkan untuk normal): ");
+        String debugInput = input.nextLine().trim();
         
+        if (debugInput.equalsIgnoreCase("DEBUG")) {
+            debugMode();
+        } else {
+            normalMode();
+        }
+    }
+        
+    static void normalMode(){
         intro();
         room1();
         room2();
@@ -17,6 +29,51 @@ public class EscapeRoom {
         room5();
         ending();
     }
+    
+    static void debugMode() {
+        System.out.println("🔧 DEBUG MODE AKTIF! 🔧");
+        System.out.println("Ketik nama room (room1/room2/room3/roommaze/room4/room5/ending/exit):");
+        
+        while (true) {
+            System.out.print("\n> ");
+            String command = input.nextLine().toLowerCase().trim();
+            
+            switch (command) {
+                case "room1":
+                    room1();
+                    break;
+                case "room2":
+                    room2();
+                    break;
+                case "room3":
+                    room3();
+                    break;
+                case "roommaze":
+                case "maze":
+                    roommaze();
+                    break;
+                case "room4":
+                    room4();
+                    break;
+                case "room5":
+                    room5();
+                    break;
+                case "ending":
+                case "end":
+                    ending();
+                    break;
+                case "intro":
+                    intro();
+                    break;
+                case "exit":
+                case "quit":
+                    System.out.println("Keluar dari DEBUG MODE. Bye! 👋");
+                    return;
+                default:
+                    System.out.println("Room ga ada! Ketik: room1/room2/room3/roommaze/room4/room5/ending/exit");
+            }
+        }
+    }
 
     static void intro() {
         System.out.println("=== ECHOES OF THE LOCKED MIND ===\n");
@@ -24,77 +81,20 @@ public class EscapeRoom {
         System.out.println("Suara berbisik terdengar...");
         System.out.println("\"Kamu tidak seharusnya di sini...\"\n");
     }
-
+    
     static void room1() {
-        System.out.println("\n--- ROOM 1: WHISPER CODE ---");
-
-        System.out.println("K A M U");
-        System.out.println("A M U K");
-        System.out.println("M U K A");
-        System.out.println("U K A M");
-
-        System.out.println("\n\"Baca seperti aku mengawasi...\"");
-
-        // Fake clue
-        System.out.println("\nDi sudut ruangan tertulis:");
-        System.out.println("\"SEMUA JAWABAN ADALAH KEBALIKAN\"");
-        System.out.println("Angka di dinding: 9999");
-        System.out.println("Huruf = posisi alfabet");
-        
-        System.out.print("\nMasukkan kode: ");
-        String jawab = input.nextLine();
-
-        if (jawab.equals("1111321")) {
-            System.out.println("Benar... tapi sesuatu memperhatikanmu.");
-        } else {
-            gameOver();
-        }
+        puzzles.room1();
     }
-
+    
     static void room2() {
-        System.out.println("\n--- ROOM 2: TIME IS BROKEN ---");
-
-        System.out.println("Jam menunjukkan:");
-        System.out.println("03:15");
-        System.out.println("06:30");
-        System.out.println("09:45");
-        System.out.println("?");
-
-        System.out.println("\"Waktu di sini berulang...\"");
-
-        // Fake clue
-        System.out.println("Suara berbisik:");
-        System.out.println("\"Jangan percaya pola...\"");
-
-        System.out.print("\nMasukkan waktu: ");
-        String jawab = input.nextLine();
-
-        if (jawab.equals("1300")) {
-            System.out.println("Jam berdetak lagi...");
-        } else {
-            gameOver();
-        }
+        puzzles.room2();
     }
-
+    
     static void room3() {
-        System.out.println("\n--- ROOM 3: VOICES ---");
-
-        System.out.println("1. Aku selalu bohong");
-        System.out.println("2. Dia berkata jujur");
-        System.out.println("3. Kami semua bohong");
-
-        System.out.print("\nPilih jawaban benar (1/2/3): ");
-        String jawab = input.nextLine();
-
-        if (jawab.equals("2")) {
-            System.out.println("Salah satu suara menirukanmu...");
-        } else {
-            gameOver();
-        }
+        puzzles.room3();
     }
     
     static void roommaze() {
-        
         System.out.println("\n--- ROOM MAZE ---\n");
 
         System.out.println("Kamu melangkah masuk...");
@@ -130,63 +130,20 @@ public class EscapeRoom {
         System.out.println("\n\"KAMU...\"");
         System.out.println("\"TIDAK PERNAH KELUAR DARI SINI.\"");
 }
+    
     static void room4() {
-        System.out.println("\n--- ROOM 4: REMEMBER---");
-        
-        System.out.println("Kamu Memperhatikan sebuah tanda.....");
-        System.out.println("Yang muncul sesaat...");
-        
-        String Reminder = "3602";
-        try {
-            for (int i = 0; i < 2; i++){
-                System.out.println(Reminder);
-                Thread.sleep(500);
-            }
-            } catch (InterruptedException e) {
-                    e.printStackTrace();
-        }
-        System.out.print("\nMasukkan kode akhir: ");
-        
-        String jawab = input.nextLine();
-         
-        if (jawab.equals("3602")) {
-            System.out.println("Pintu terbuka...");
-        } else {
-            gameOver();
-        }
-        
+        puzzles.room4();
     }
     
     static void room5() {
-        System.out.println("\n--- ROOM 5: FINAL CODE ---");
-
-        System.out.println("Gabungkan semua angka...");
-        System.out.println("Buang yang sama... ambil yang tersisa...");
-
-        System.out.print("\nMasukkan kode akhir: ");
-        String jawab = input.nextLine();
-
-        if (jawab.equals("13206")) {
-            System.out.println("Pintu terbuka...");
-        } else {
-            gameOver();
-        }
+        puzzles.room5();
     }
     
-    
-
     static void ending() {
         System.out.println("\nKamu keluar...");
         System.out.println("Tapi...");
         System.out.println("Semua orang melihatmu aneh...");
         System.out.println("Seolah-olah kamu bukan dirimu sendiri...");
         System.out.println("\nYOU ESCAPED...?");
-    }
-
-    static void gameOver() {
-        System.out.println("\nLampu mati...");
-        System.out.println("Suara mendekat...");
-        System.out.println("GAME OVER");
-        System.exit(0);
     }
 }
