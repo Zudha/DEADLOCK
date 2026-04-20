@@ -2,6 +2,10 @@ package com.kelompok7.projectddpk1.testGUI;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;  // ← 
+import java.awt.event.ActionListener; // ← TAMBAH
+import javax.swing.Timer;  // ← TAMBAH
+import java.awt.event.*;  // ← TAMBAH
 
 public class EscapeRoomGUI extends JFrame {
 
@@ -270,9 +274,28 @@ void room4() {
     }
     
     void room6() {
+    showTextMode();
+    clear();
+    print("--- ROOM 6: SLIDING PUZZLE ---");
+    print("Kamu menemukan panel misterius...");
+    print("9 kotak bergeser... 1 kosong.");
+    print("\"Susun sampai benar... atau mati di sini.\"");
+    print("\nKlik kotak untuk memecahkan...");
+    
+    // Disable input text sementara
+    input.setEnabled(false);
+    
+    // Show puzzle
+    centerPanel.removeAll();
+    centerPanel.add(new SlidingPuzzlePanel(this), BorderLayout.CENTER);
+    centerPanel.revalidate();
+    centerPanel.repaint();
+}
+    
+    void room7() {
         showTextMode();
         clear();
-        print("--- ROOM 6: FINAL CODE ---");
+        print("--- ROOM 7: FINAL CODE ---");
         print("Kamu melihat sebuah celah... Cahaya... akhirnya.");
         print("\nSuara kembali terdengar:");
         print("\"KAMU... TIDAK PERNAH KELUAR DARI SINI.\"");
@@ -295,6 +318,14 @@ void room4() {
         input.setEnabled(false);
     }
 
+    // Tambah di EscapeRoomGUI
+void showPuzzleMode(JPanel puzzlePanel) {
+    centerPanel.removeAll();
+    centerPanel.add(puzzlePanel, BorderLayout.CENTER);
+    centerPanel.revalidate();
+    centerPanel.repaint();
+}
+    
     void gameOver() {
         clear();
         print("\nLampu mati...");
@@ -342,14 +373,14 @@ void room4() {
                 break;
             case 6:
                 if (inputUser.equals("3602")) {
-                    state = 7;
+                    state = 8;
                     room5();
                 }
                 else gameOver();
                 break;
             case 7:
                 if (inputUser.equals("7925")) {
-                    state = 8;
+                    state = 9;
                     room6();
                 }
                 else gameOver();
@@ -369,3 +400,4 @@ void room4() {
         SwingUtilities.invokeLater(() -> new EscapeRoomGUI());
     }
 }
+

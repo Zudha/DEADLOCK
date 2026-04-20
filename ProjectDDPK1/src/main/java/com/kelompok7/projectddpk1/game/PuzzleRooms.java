@@ -85,9 +85,11 @@ public class PuzzleRooms {
         
         String Reminder = "3602";
         try {
-            for (int i = 0; i < 2; i++){
-                System.out.println(Reminder);
-                Thread.sleep(500);
+            for (int i = 0; i < 1; i++){
+                System.out.print(Reminder);
+                Thread.sleep(1500);
+                
+                System.out.print("\b\b\b\b"); // ini untuk menghapus output yang di cetak
             }
             } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -119,6 +121,85 @@ public class PuzzleRooms {
             gameOver();
         }
     }
+    
+     public void room6() {
+        System.out.println("\n--- ROOM 6: SLIDING PUZZLE ---");
+        System.out.println("Geser kotak sampai jadi urutan 1-8 (0 = kosong)");
+        
+        // Target: 1 2 3
+        //          4 5 6  
+        //          7 8 0
+        int[][] target = {{1,2,3},{4,5,6},{7,8,0}};
+        int[][] puzzle = {{1,2,3},{4,0,6},{7,5,8}}; // Puzzle awal
+        
+        printPuzzle(puzzle);
+        
+        int moves = 0;
+        while (moves < 10) { // Max 10 moves
+            System.out.print("Gerakkan 0 ke (atas/bawah/kiri/kanan): ");
+            String direction = input.nextLine().toLowerCase();
+            
+            if (movePuzzle(puzzle, direction)) {
+                moves++;
+                System.out.println("Move " + moves + "/10");
+                printPuzzle(puzzle);
+                
+                if (isSolved(puzzle, target)) {
+                    System.out.println("PUZZLE TERPECAHKAN!");
+                    return;
+                }
+            } else {
+                System.out.println("Gerakan tidak valid!");
+            }
+        }
+        gameOver();
+    }
+
+    private void printPuzzle(int[][] puzzle) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                System.out.printf("%2d ", puzzle[i][j]);
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+
+    private boolean movePuzzle(int[][] puzzle, String direction) {
+        int[] zeroPos = findZero(puzzle);
+        
+        int newX = zeroPos[0], newY = zeroPos[1];
+        
+        if (direction.equals("atas") && zeroPos[0] > 0) newX--;
+        else if (direction.equals("bawah") && zeroPos[0] < 2) newX++;
+        else if (direction.equals("kiri") && zeroPos[1] > 0) newY--;
+        else if (direction.equals("kanan") && zeroPos[1] < 2) newY++;
+        else return false;
+        
+        // Swap
+        swap(puzzle, zeroPos[0], zeroPos[1], newX, newY);
+        return true;
+    }
+
+    private int[] findZero(int[][] puzzle) {
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                if (puzzle[i][j] == 0) return new int[]{i,j};
+        return new int[]{-1,-1};
+    }
+
+    private void swap(int[][] puzzle, int x1, int y1, int x2, int y2) {
+        int temp = puzzle[x1][y1];
+        puzzle[x1][y1] = puzzle[x2][y2];
+        puzzle[x2][y2] = temp;
+    }
+
+    private boolean isSolved(int[][] puzzle, int[][] target) {
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                if (puzzle[i][j] != target[i][j]) return false;
+        return true;
+    }
 
     private void gameOver() {
         System.out.println("\nLampu mati...");
@@ -127,3 +208,5 @@ public class PuzzleRooms {
         System.exit(0);
     }
 }
+
+    

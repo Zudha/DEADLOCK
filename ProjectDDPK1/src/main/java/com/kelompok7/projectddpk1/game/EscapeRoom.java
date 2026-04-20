@@ -27,36 +27,40 @@ public class EscapeRoom {
         roommaze();
         room4();
         room5();
+        room6();
         ending();
     }
     
     static void debugMode() {
         System.out.println("🔧 DEBUG MODE AKTIF! 🔧");
-        System.out.println("Ketik nama room (room1/room2/room3/roommaze/room4/room5/ending/exit):");
+        System.out.println("Ketik nama room 1/2/3/roommaze/4/5/6/ending/exit):");
         
         while (true) {
             System.out.print("\n> ");
             String command = input.nextLine().toLowerCase().trim();
             
             switch (command) {
-                case "room1":
+                case ".1":
                     room1();
                     break;
-                case "room2":
+                case "2":
                     room2();
                     break;
-                case "room3":
+                case "3":
                     room3();
                     break;
                 case "roommaze":
                 case "maze":
                     roommaze();
                     break;
-                case "room4":
+                case "4":
                     room4();
                     break;
-                case "room5":
+                case "5":
                     room5();
+                    break;
+                case "6":
+                    room6();
                     break;
                 case "ending":
                 case "end":
@@ -70,7 +74,7 @@ public class EscapeRoom {
                     System.out.println("Keluar dari DEBUG MODE. Bye! 👋");
                     return;
                 default:
-                    System.out.println("Room ga ada! Ketik: room1/room2/room3/roommaze/room4/room5/ending/exit");
+                    System.out.println("Room ga ada! Ketik: 1/2/3/roommaze/4/5/ending/exit");
             }
         }
     }
@@ -137,6 +141,10 @@ public class EscapeRoom {
     
     static void room5() {
         puzzles.room5();
+    }
+    
+    static void room6(){
+        puzzles.room6();
     }
     
     static void ending() {
