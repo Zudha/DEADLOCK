@@ -2,10 +2,8 @@ package com.kelompok7.projectddpk1.testGUI;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;  // ← 
-import java.awt.event.ActionListener; // ← TAMBAH
-import javax.swing.Timer;  // ← TAMBAH
-import java.awt.event.*;  // ← TAMBAH
+import java.awt.event.*;
+import javax.swing.Timer;
 
 public class EscapeRoomGUI extends JFrame {
 
@@ -17,54 +15,52 @@ public class EscapeRoomGUI extends JFrame {
     int state = 0;
 
     public EscapeRoomGUI() {
-        setTitle("ECHOES OF THE LOCKED MIND");
+        setTitle("COMDEV: Commit of Development");
         setSize(700, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-        
 
-        // Setup Display Area (Area Narasi)
+        // Setup Display Area
         display = new JTextArea();
         display.setEditable(false);
         display.setBackground(Color.BLACK);
-        display.setForeground(new Color(0, 255, 0)); // Hijau Matrix/Terminal
+        display.setForeground(new Color(50, 255, 50));
         display.setFont(new Font("Monospaced", Font.PLAIN, 14));
         display.setMargin(new Insets(15, 15, 15, 15));
 
         // Setup Input Field
         input = new JTextField();
-        input.setBackground(Color.DARK_GRAY);
+        input.setBackground(new Color(30, 30, 30));
         input.setForeground(Color.WHITE);
         input.setCaretColor(Color.WHITE);
-        input.setFont(new Font("SansSerif", Font.BOLD, 14));
+        input.setFont(new Font("Consolas", Font.BOLD, 16));
 
         centerPanel = new JPanel(new BorderLayout());
         centerPanel.add(new JScrollPane(display), BorderLayout.CENTER);
 
         add(centerPanel, BorderLayout.CENTER);
         add(input, BorderLayout.SOUTH);
-        
-        lamp = new JPanel();
-        lamp.setBackground(Color.BLACK); // lampu mati
 
-        // Inisialisasi Maze
+        // Setup Lampu Morse
+        lamp = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(getBackground());
+                g.fillOval(10, 10, 100, 100);
+            }
+        };
+        lamp.setPreferredSize(new Dimension(120, 120));
+        lamp.setBackground(Color.BLACK);
+
         mazePanel = new MazeGUI(); 
 
-        // Listener Enter
         input.addActionListener(e -> {
             String userInput = input.getText();
             input.setText("");
             handleInput(userInput);
         });
-        
-        lamp = new JPanel() {
-        protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        g.setColor(getBackground());
-        g.fillOval(0, 0, getWidth(), getHeight());
-    }
-};
-        lamp.setPreferredSize(new Dimension(120, 120));
+
         intro();
         
         setLocationRelativeTo(null);
@@ -77,327 +73,212 @@ public class EscapeRoomGUI extends JFrame {
         display.setCaretPosition(display.getDocument().getLength());
     }
 
-    void clear() {
-        display.setText("");
-    }
+    void clear() { display.setText(""); }
     
-     void showTextMode() {
+    void showTextMode() {
         centerPanel.removeAll();
         centerPanel.add(new JScrollPane(display), BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
-        input.requestFocusInWindow();
     }
 
     void showLampMode() {
         centerPanel.removeAll();
-
         JPanel wrapper = new JPanel();
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
         wrapper.setBackground(Color.BLACK);
-
         lamp.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         wrapper.add(Box.createVerticalGlue());
         wrapper.add(lamp);
         wrapper.add(Box.createVerticalStrut(20));
         wrapper.add(new JScrollPane(display));
         wrapper.add(Box.createVerticalGlue());
-
         centerPanel.add(wrapper, BorderLayout.CENTER);
-
         centerPanel.revalidate();
         centerPanel.repaint();
-}
+    }
 
-        //Kode agar Morse Berjalan
-    void playMorse(String morse){
-        int unit = 225; // durasi
+    void playMorse(String morse) {
+        int unit = 225;
         input.setEnabled(false);
-        
-        Timer timer = new Timer(unit,null);
+        Timer timer = new Timer(unit, null);
         final int[] i = {0};
         final boolean[] isOn = {false};
-        final int[] delay = {unit};
         
-        
-        
-    timer.addActionListener(e -> {
-        if (i[0] >= morse.length()) {
-            timer.stop();
-            lampOff();
-            print("\nMasukkan kode:");
-            state = 7;
-            input.setEnabled(true);
-            return;
-        }
-
-        char c = morse.charAt(i[0]);
-
-        if (c == ' ') {
-        lampOff();
-        isOn[0] = false; // 🔥 PENTING: paksa mati state
-        timer.setDelay(unit * 3); // delay antar karakter
-        i[0]++;
-        return;
-        }
-
-        if (!isOn[0]) {
-            lampOn();
-
-            if (c == '.') timer.setDelay(unit);
-            else if (c == '-') timer.setDelay(unit * 3);
-
-            isOn[0] = true;
-
-        } else {
-            lampOff();
-            timer.setDelay(unit);
-            isOn[0] = false;
-            i[0]++;
-        }
-    });
+        timer.addActionListener(e -> {
+            if (i[0] >= morse.length()) {
+                timer.stop();
+                lamp.setBackground(Color.BLACK);
+                print("\n[SYSTEM]: Masukkan kode hasil dekripsi:");
+                state = 7;
+                input.setEnabled(true);
+                return;
+            }
+            char c = morse.charAt(i[0]);
+            if (c == ' ') {
+                lamp.setBackground(Color.BLACK);
+                timer.setDelay(unit * 3);
+                i[0]++;
+            } else if (!isOn[0]) {
+                lamp.setBackground(Color.WHITE);
+                timer.setDelay(c == '.' ? unit : unit * 3);
+                isOn[0] = true;
+            } else {
+                lamp.setBackground(Color.BLACK);
+                timer.setDelay(unit);
+                isOn[0] = false;
+                i[0]++;
+            }
+            lamp.repaint();
+        });
         timer.start();
     }
-        
-         // Menampilkan Labirin
+
     void showMazeMode() {
         centerPanel.removeAll();
         centerPanel.add(mazePanel, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
-        input.requestFocusInWindow();
-    }
-    
-    void lampOn() {
-        lamp.setBackground(Color.WHITE);
-        lamp.repaint();
-    }
-    
-    void lampOff(){
-        lamp.setBackground(Color.BLACK);
-        lamp.repaint();
     }
 
-    // --- LOGIKA NARASI SESUAI KODE TEKS ---
+    // --- ALUR CERITA COMDEV ---
 
     void intro() {
         showTextMode();
-        print("=== ECHOES OF THE LOCKED MIND ===\n");
-        print("Kamu terbangun di tempat gelap...");
-        print("Suara berbisik terdengar...");
-        print("\"Kamu tidak seharusnya di sini...\"\n");
-        print("(Ketik apapun untuk melanjutkan)");
+        print("=== COMDEV: Commit of Development ===");
+        print("Status: Menjalankan hidup.exe...");
+        print("\nKamu berdiri di persimpangan jalan.");
+        print("Mau langsung kerja cari uang, atau lanjut kuliah?");
+        print("Dua-duanya kelihatan benar, tapi mana yang buatmu tenang?");
+        print("\nIngat: Setiap pilihan adalah COMMIT. Tak bisa di-Undo.");
+        print("\n(Tekan Enter untuk mulai)");
     }
 
     void room1() {
         clear();
-        print("--- ROOM 1: WHISPER CODE ---");
-        print("K A M U\nA M U K\nM U K A\nU K A M");
-        print("\n\"Baca seperti aku mengawasi...\"");
-        print("\nDi sudut ruangan tertulis:");
-        print("\"SEMUA JAWABAN ADALAH KEBALIKAN\"");
-        print("Angka di dinding: 9999");
-        print("Huruf = posisi alfabet");
-        print("\nMasukkan kode:");
+        print("--- ROOM 1: SALAH KODE ---");
+        print("Pikiranmu lagi ruwet, kayak kode yang banyak Error-nya.");
+        print("Kamu butuh angka 'kunci' supaya sistem ini terbuka:");
+        print("\n  Target  : 2026");
+        print("  Sekarang: 1000");
+        print("\nBerapa angka 'Kunci' yang kurang?");
     }
 
     void room2() {
         clear();
-        print("--- ROOM 2: TIME IS BROKEN ---");
-        print("Benar... tapi sesuatu memperhatikanmu.");
-        print("\nJam menunjukkan:");
-        print("03:15 -> 06:30 -> 09:45 -> ?");
-        print("\n\"Waktu di sini berulang...\"");
-        print("Suara berbisik: \"Jangan percaya pola...\"");
-        print("\nMasukkan waktu (format 0000):");
+        print("--- ROOM 2: WAKTU TERBATAS ---");
+        print("Kamu ngerasa tertinggal dari teman-temanmu.");
+        print("Ada yang sudah sukses, ada yang masih berjuang.");
+        print("\nJangan panik. Ikuti polanya:");
+        print("01:00 -> 03:30 -> 06:00 -> ...");
+        print("\nJam berapa selanjutnya? (Format 0000)");
     }
 
     void room3() {
         clear();
-        print("--- ROOM 3: VOICES ---");
-        print("Jam berdetak lagi...");
-        print("\n1. Aku selalu bohong");
-        print("2. Dia berkata jujur");
-        print("3. Kami semua bohong");
-        print("\nPilih jawaban benar (1/2/3):");
+        print("--- ROOM 3: SUARA BERBISIK ---");
+        print("Banyak orang bilang: 'Buat apa sekolah tinggi kalau ujungnya kerja?'");
+        print("Tapi hatimu bilang: 'Aku butuh ilmu lebih banyak.'");
+        print("\nMana yang kamu pilih?");
+        print("1. Menyerah saja.");
+        print("2. Terus belajar (Update diri).");
+        print("3. Ikut-ikutan orang lain."); 
     }
 
     void roomMazeIntro() {
         showMazeMode();
-        print("\n--- ROOM MAZE ---");
-        print("Kamu melangkah masuk...");
-        print("Dinding di sekitarmu terasa... hidup.");
-        print("Bisikan muncul: \"Jangan percaya arahmu sendiri...\"");
-        print("Gunakan W/A/S/D lalu Enter.");
+        print("--- ROOM 4: JALAN BERLIKU ---");
+        print("Dunia luar itu luas dan membingungkan.");
+        print("Cari jalan keluarmu di sini sebelum waktumu habis.");
+        print("\n(Gunakan W/A/S/D untuk jalan)");
     }
-    
-void room4() {
-    showTextMode();
-    clear();
 
-    input.setEnabled(false); //  disable input dulu
-
-    print("--- ROOM 4: REMEMBER ---");
-    print("Kamu memperhatikan sebuah tanda...");
-    print("Yang muncul sesaat...\n");
-
-    String kode = "3602";
-    print(kode);
-
-    Timer t = new Timer(750, e -> {
+    void room4() {
+        showTextMode();
         clear();
-        print("--- ROOM 4: REMEMBER ---");
-        print("Tanda itu menghilang...");
-        print("Kamu merasa harus mengingat sesuatu...\n");
-        
-        print("Masukkan Kode: ");
+        input.setEnabled(false);
+        print("--- ROOM 5: JANGAN LUPA ---");
+        print("Seringkali kita lupa tujuan awal karena terlalu sibuk.");
+        print("Simpan angka ini baik-baik di kepalamu...");
+        String kode = "8821";
+        print("\nINGAT KODE INI: " + kode);
+        Timer t = new Timer(4000, e -> {
+            clear();
+            print("Masukkan kembali kode memori tadi:");
+            state = 6;
+            input.setEnabled(true);
+        });
+        t.setRepeats(false);
+        t.start();
+    }
 
-        state = 6;     // pindah ke state input
-        input.setEnabled(true); // input di enabled lagi
-    });
-
-    t.setRepeats(false);
-    t.start();
-}
     void room5() {
-        lampOff();
         showLampMode();
         clear();
-        print("---ROOM 5: MORSE ---");
-        print("Kamu Melihat Lampu berkedip di ruangan yang kosong.... ");
-        print("Kamu Mencoba untuk memecahkan apa tanda yang dimaksud?!?");
-        
-        String morse = "--... ----. ..--- .....";
-        
-        playMorse(morse);
+        print("--- ROOM 6: SINYAL HARAPAN ---");
+        print("Di tempat gelap, selalu ada cahaya.");
+        print("Perhatikan lampu itu, dia membisikkan sebuah kode.");
+        print("Tulis kodenya di sini...");
+        playMorse("--... ----. ..--- ....."); // 7925
     }
-    
+
     void room6() {
-    showTextMode();
-    clear();
-    print("--- ROOM 6: SLIDING PUZZLE ---");
-    print("Kamu menemukan panel misterius...");
-    print("9 kotak bergeser... 1 kosong.");
-    print("\"Susun sampai benar... atau mati di sini.\"");
-    print("\nKlik kotak untuk memecahkan...");
-    
-    // Disable input text sementara
-    input.setEnabled(false);
-    
-    // Show puzzle
-    centerPanel.removeAll();
-    centerPanel.add(new SlidingPuzzlePanel(this), BorderLayout.CENTER);
-    centerPanel.revalidate();
-    centerPanel.repaint();
-}
-    
+        showTextMode();
+        clear();
+        print("--- ROOM 7: FINAL COMMIT ---");
+        print("Susun puzzle ini untuk menyelesaikan development dirimu.");
+        input.setEnabled(false);
+        centerPanel.removeAll();
+        centerPanel.add(new SlidingPuzzlePanel(this), BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
+    }
+
     void room7() {
         showTextMode();
         clear();
-        print("--- ROOM 7: FINAL CODE ---");
-        print("Kamu melihat sebuah celah... Cahaya... akhirnya.");
-        print("\nSuara kembali terdengar:");
-        print("\"KAMU... TIDAK PERNAH KELUAR DARI SINI.\"");
-        print("\nGabungkan semua angka...");
-        print("Hilangkan yang berulang... ambil yang tersisa...");
-        print("Urutkan Untuk menemukan jalan keluar.....");
-        print("\nMasukkan kode akhir:");
+        print("--- ROOM 7: RENCANA MASA DEPAN ---");
+        print("Hidupmu yang berantakan harus disusun kembali.");
+        print("Urutkan kepingan ini dari yang terkecil.");
+        print("Kalau sudah rapi, pintu akan terbuka.");
     }
-    
-
 
     void ending() {
         clear();
-        print("--- ENDING ---");
-        print("Pintu terbuka...");
-        print("Kamu keluar... Tapi...");
-        print("Semua orang melihatmu aneh...");
-        print("Seolah-olah kamu bukan dirimu sendiri...");
-        print("\nYOU ESCAPED...?");
+        print("--- SISTEM BERHASIL DI-UPDATE ---");
+        print("Klik. Pintu masa depan terbuka.");
+        print("Ternyata sukses itu bukan balapan sama orang lain,");
+        print("tapi soal seberapa berani kamu melangkah.");
+        print("\nSELAMAT! KAMU BERHASIL COMMIT.");
         input.setEnabled(false);
     }
 
-    // Tambah di EscapeRoomGUI
-void showPuzzleMode(JPanel puzzlePanel) {
-    centerPanel.removeAll();
-    centerPanel.add(puzzlePanel, BorderLayout.CENTER);
-    centerPanel.revalidate();
-    centerPanel.repaint();
-}
-    
     void gameOver() {
         clear();
-        print("\nLampu mati...");
-        print("Suara mendekat...");
+        print("--- SYSTEM CRASH ---");
+        print("Kamu gagal melakukan commit. Brain Memory leak berlebihan.");
         print("GAME OVER");
         input.setEnabled(false);
     }
 
     void handleInput(String inputUser) {
         if (inputUser.trim().isEmpty()) return;
-
         switch (state) {
-            case 0:
-                state = 1;
-                room1();
+            case 0: state = 1; room1(); break;
+            case 1: if (inputUser.equals("1026")) { state = 2; room2(); } else gameOver(); break;
+            case 2: if (inputUser.equals("0830")) { state = 3; room3(); } else gameOver(); break;
+            case 3: if (inputUser.equals("2")) { state = 4; roomMazeIntro(); } else gameOver(); break;
+            case 4: 
+                mazePanel.movePlayer(inputUser.toUpperCase().charAt(0));
+                if (mazePanel.isExitReached()) { state = 5; room4(); }
                 break;
-            case 1:
-                if (inputUser.equals("1111321")) { state = 2; room2(); } 
-                else gameOver();
-                break;
-            case 2:
-                if (inputUser.equals("1300")) { state = 3; room3(); } 
-                else gameOver();
-                break;
-            case 3:
-                if (inputUser.equals("2")) { 
-                    state = 4; 
-                    roomMazeIntro(); 
-                } else gameOver();
-                break;
-            case 4:
-                if (inputUser.equalsIgnoreCase("MJ")) {
-                    state = 5;
-                    room4();
-                } else {
-                    mazePanel.movePlayer(inputUser.charAt(0));
-                    if (mazePanel.isExitReached()) {
-                        state = 5;
-                        room4();
-                    }
-                }
-                break;
-            case 5:
-                
-                break;
-            case 6:
-                if (inputUser.equals("3602")) {
-                    state = 8;
-                    room5();
-                }
-                else gameOver();
-                break;
-            case 7:
-                if (inputUser.equals("7925")) {
-                    state = 9;
-                    room6();
-                }
-                else gameOver();
-                break;
-            case 8:
-                if (inputUser.equals("13206")){
-                    state = 9;
-                    ending();
-                }
-                else gameOver();
-                break;
+            case 6: if (inputUser.equals("8821")) { state = 7; room5(); } else gameOver(); break;
+            case 7: if (inputUser.equals("7925")) { state = 8; room6(); } else gameOver(); break;
+            case 8: if (inputUser.equals("13206")) { state = 9; ending(); } else gameOver(); break;
         }
-        input.requestFocusInWindow();
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new EscapeRoomGUI());
     }
 }
-
