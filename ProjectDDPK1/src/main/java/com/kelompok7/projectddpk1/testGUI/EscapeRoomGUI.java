@@ -66,11 +66,18 @@ public class EscapeRoomGUI extends JFrame {
             handleInput(userInput);
         });
 
-        intro();
+        CutscenePanel cutscene = new CutscenePanel(this);
+        centerPanel.removeAll();
+        centerPanel.add(cutscene, BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
 
         setLocationRelativeTo(null);
         setVisible(true);
-        SwingUtilities.invokeLater(() -> input.requestFocusInWindow());
+        SwingUtilities.invokeLater(() -> {
+        input.requestFocusInWindow();
+        cutscene.play();
+});
     }
 
     // ================================================================
@@ -102,6 +109,7 @@ public class EscapeRoomGUI extends JFrame {
         centerPanel.add(scenePanel, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
+        scenePanel.resetCharPos();
     }
 
     // Mode lama: teks hijau di layar hitam
@@ -215,20 +223,22 @@ public class EscapeRoomGUI extends JFrame {
         print("\n(Tekan Enter untuk mulai)");
     }
 
-    void room1() {
-        showSceneMode();
-        // Ganti "" dengan path gambar nanti, contoh: "/assets/bg/room1.png"
-        scenePanel.setBackground("");
-        scenePanel.setDialog("NARRATOR",
-            "--- ROOM 1: SALAH KODE ---",
-            "Pikiranmu lagi ruwet, kayak kode yang banyak Error-nya.",
-            "Kamu butuh angka 'kunci' supaya sistem ini terbuka:",
-            "  Target: 2026  |  Sekarang: 1000",
-            "Hanya gunakan digit pertama target, sisanya digit sekarang.",
-            "",
-            "Berapa angka 'Kunci' yang kurang?"
-        );
-    }
+        void room1() {
+            showSceneMode();
+            // Ganti "" dengan path gambar nanti, contoh: "/assets/bg/room1.png"
+            scenePanel.setBackground("/asset/bg/room1pintu.png");
+            scenePanel.resetCharPos();
+            scenePanel.setDeskPosition(300, 290, 80, 60); // x, y, lebar, tinggi
+            scenePanel.setInteractDialog("NARRATOR",
+                "--- ROOM 1: SALAH KODE ---",
+                "Pikiranmu lagi ruwet, kayak kode yang banyak Error-nya.",
+                "Kamu butuh angka 'kunci' supaya sistem ini terbuka:",
+                "  Target: 2026  |  Sekarang: 1000",
+                "Hanya gunakan digit pertama target, sisanya digit sekarang.",
+                "",
+                "Berapa angka 'Kunci' yang kurang?"
+            );
+        }
 
     void room2() {
         showSceneMode();
