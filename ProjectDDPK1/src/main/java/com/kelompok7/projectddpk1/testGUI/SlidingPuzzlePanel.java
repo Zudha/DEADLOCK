@@ -81,7 +81,7 @@ public class SlidingPuzzlePanel extends JPanel implements ActionListener {
     
                parent.input.setEnabled(true); 
                parent.showTextMode();         
-               parent.room7();                
+               parent.room8();                
 }
         }
     }
