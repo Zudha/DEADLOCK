@@ -58,7 +58,11 @@ public class EscapeRoomGUI extends JFrame {
 
         // Inisialisasi panel-panel
         mazePanel = new MazeGUI();
-        scenePanel = new ScenePanel();  // inisialisasi ScenePanel
+        scenePanel = new ScenePanel();
+        scenePanel.setOnDialogShown(() -> {
+        input.setEnabled(true);
+        input.requestFocusInWindow();
+    });
 
         input.addActionListener(e -> {
             String userInput = input.getText();
@@ -110,6 +114,9 @@ public class EscapeRoomGUI extends JFrame {
         centerPanel.revalidate();
         centerPanel.repaint();
         scenePanel.resetCharPos();
+        input.setEnabled(false); 
+        scenePanel.requestFocusInWindow(); 
+        SwingUtilities.invokeLater(() -> scenePanel.requestFocusInWindow());  
     }
 
     // Mode lama: teks hijau di layar hitam
@@ -174,7 +181,7 @@ public class EscapeRoomGUI extends JFrame {
                     isGap[0] = true;
                 } else {
                     lamp.setBackground(Color.BLACK);
-                    timer.setDelay(unit * 4);
+                    timer.setDelay(unit * 5);
                     isGap[0] = false;
                     i[0]++;
                 }
@@ -182,7 +189,7 @@ public class EscapeRoomGUI extends JFrame {
                 if (!isOn[0]) {
                     lamp.setBackground(Color.WHITE);
                     if (c == '-') {
-                        timer.setDelay(unit * 4);
+                        timer.setDelay(unit * 3);
                     } else {
                         timer.setDelay(unit * 1);
                     }
@@ -225,8 +232,7 @@ public class EscapeRoomGUI extends JFrame {
 
         void room1() {
             showSceneMode();
-            // Ganti "" dengan path gambar nanti, contoh: "/assets/bg/room1.png"
-            scenePanel.setBackground("/asset/bg/room1pintu.png");
+            scenePanel.setBackground("/asset/bg/room1.png");
             scenePanel.resetCharPos();
             scenePanel.setDeskPosition(300, 290, 80, 60); // x, y, lebar, tinggi
             scenePanel.setInteractDialog("NARRATOR",
@@ -243,7 +249,7 @@ public class EscapeRoomGUI extends JFrame {
     void room2() {
         showSceneMode();
         // Ganti "" dengan path gambar nanti, contoh: "/assets/bg/room2.png"
-        scenePanel.setBackground("");
+        scenePanel.setBackground("/asset/bg/room1.png");
         scenePanel.setDialog("NARRATOR",
             "--- ROOM 2: WAKTU TERBATAS ---",
             "Kamu ngerasa tertinggal dari teman-temanmu.",
@@ -254,12 +260,14 @@ public class EscapeRoomGUI extends JFrame {
             "",
             "Jam berapa selanjutnya? (Format 0000)"
         );
+        input.setEnabled(true);
+        input.requestFocusInWindow();
     }
 
     void room3() {
         showSceneMode();
         // Ganti "" dengan path gambar nanti, contoh: "/assets/bg/room3.png"
-        scenePanel.setBackground("");
+        scenePanel.setBackground("/asset/bg/room1.png");
         scenePanel.setDialog("NARRATOR",
             "--- ROOM 3: SUARA BERBISIK ---",
             "Banyak orang bilang: 'Buat apa sekolah tinggi?'",
@@ -270,6 +278,8 @@ public class EscapeRoomGUI extends JFrame {
             "2. Terus belajar (Update diri).",
             "3. Ikut-ikutan orang lain."
         );
+        input.setEnabled(true);
+        input.requestFocusInWindow();
     }
 
     void roomMazeIntro() {
@@ -344,19 +354,21 @@ public class EscapeRoomGUI extends JFrame {
     void room8() {
         showSceneMode();
         // Ganti "" dengan path gambar nanti, contoh: "/assets/bg/room8.png"
-        scenePanel.setBackground("");
+        scenePanel.setBackground("/asset/bg/room2.jpeg");
         scenePanel.setDialog("NARRATOR",
             "--- ROOM 8: RENCANA MASA DEPAN ---",
             "Hidupmu yang berantakan harus disusun kembali.",
             "Urutkan kepingan ini dari yang terkecil.",
             "Kalau sudah rapi, pintu akan terbuka."
         );
+        input.setEnabled(true);
+        input.requestFocusInWindow();
     }
 
     void ending() {
         showSceneMode();
         // Ganti "" dengan path gambar ending nanti
-        scenePanel.setBackground("");
+        scenePanel.setBackground("/asset/bg/BG-Scene-Penculikan.jpg");
         scenePanel.setDialog("SISTEM",
             "--- SISTEM BERHASIL DI-UPDATE ---",
             "Klik. Pintu masa depan terbuka.",
@@ -377,9 +389,13 @@ public class EscapeRoomGUI extends JFrame {
             "Kamu gagal melakukan commit.",
             "Brain Memory leak berlebihan.",
             "",
-            "GAME OVER"
+            "GAME OVER",
+            "",
+            "Apakah kamu ingin mengulang? (Y/T)"
         );
-        input.setEnabled(false);
+        state = 99;
+        input.setEnabled(true);
+        input.requestFocusInWindow();
     }
 
     // ================================================================
@@ -399,6 +415,17 @@ public class EscapeRoomGUI extends JFrame {
             if (room.equals("/room8")) { state = 9; room8(); return; }
             if (room.equals("/ending")) { state = 9; ending(); return; }
         }
+         if (state == 99) {
+            if (inputUser.trim().equalsIgnoreCase("Y")) {
+                state = 1;
+                room1();
+            }   
+            else {
+                System.exit(0);
+            }
+            return;
+        }
+        
         switch (state) {
             case 0: state = 1; room1(); break;
             case 1: if (inputUser.equals("1026"))      { state = 2; room2(); } else gameOver(); break;
@@ -411,7 +438,7 @@ public class EscapeRoomGUI extends JFrame {
                 break;
             case 6: if (inputUser.equals("8821"))      { state = 7; room5(); } else gameOver(); break;
             case 7: if (inputUser.equals("7925"))      { state = 8; room6(); } else gameOver(); break;
-            case 8: if (inputUser.equals("012356789")) { state = 9; ending(); } else gameOver(); break;
+            case 8: if (inputUser.equals("9999")) { state = 9; ending(); } else gameOver(); break;
         }
     }
 

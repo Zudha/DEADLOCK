@@ -14,6 +14,10 @@ public class ScenePanel extends JPanel {
     // -------------------------------------------------------
     // Data dialog
     // -------------------------------------------------------
+    private Runnable onDialogShown;
+    public void setOnDialogShown(Runnable callback) {
+    this.onDialogShown = callback;
+    }
     private BufferedImage background;
     private String characterName = "";
     private List<String> lines = new ArrayList<>();
@@ -187,12 +191,13 @@ public class ScenePanel extends JPanel {
     // Logika interaksi E
     // -------------------------------------------------------
     private void tryInteract() {
-        if (pendingDialogLines.length == 0) return;
-        if (isNearDesk()) {
-            setDialog(pendingDialogName, pendingDialogLines);
-            dialogShown = true;
-        }
+    if (pendingDialogLines.length == 0) return;
+    if (isNearDesk()) {
+        setDialog(pendingDialogName, pendingDialogLines);
+        dialogShown = true;
+        if (onDialogShown != null) onDialogShown.run(); // ← tambahkan ini
     }
+}
 
     private boolean isNearDesk() {
         int cx = (int) charX + (mcFrameW * CHAR_SCALE) / 2;
@@ -216,7 +221,8 @@ public class ScenePanel extends JPanel {
     private void update() {
         boolean moving = false;
         float nx = charX, ny = charY;
-
+        
+        if (dialogShown) { repaint(); return; }
         if (keyW) { ny -= MOVE_SPEED; charDir = DIR_UP;    moving = true; }
         if (keyS) { ny += MOVE_SPEED; charDir = DIR_DOWN;  moving = true; }
         if (keyA) { nx -= MOVE_SPEED; charDir = DIR_LEFT;  moving = true; }
@@ -225,7 +231,7 @@ public class ScenePanel extends JPanel {
         int sprW = mcFrameW * CHAR_SCALE;
         int sprH = mcFrameH * CHAR_SCALE;
         int maxX = getWidth() - sprW;
-        int maxY = (getHeight() - BOX_HEIGHT - 40) - sprH;
+        int maxY = (lines.isEmpty() ? getHeight() : getHeight() - BOX_HEIGHT - 40) - sprH;
 
         charX = Math.max(0, Math.min(nx, maxX));
         charY = Math.max(0, Math.min(ny, maxY));
@@ -275,11 +281,19 @@ public class ScenePanel extends JPanel {
         repaint();
     }
 
+    public void clearInteractDialog() {
+        pendingDialogName  = "";
+        pendingDialogLines = new String[]{};
+        dialogShown        = false;
+        clearDialog();
+    }
+    
     public void resetCharPos() {
         charX = 300; charY = 200;
         charDir = DIR_DOWN; charFrame = 0;
         dialogShown = false;
         clearDialog();
+        clearInteractDialog();
     }
 
     // -------------------------------------------------------
