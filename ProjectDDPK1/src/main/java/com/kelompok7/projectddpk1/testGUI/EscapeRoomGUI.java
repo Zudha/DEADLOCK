@@ -19,6 +19,7 @@ public class EscapeRoomGUI extends JFrame {
         setTitle("COMDEV: Commit of Development");
         setSize(700, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setResizable(false);
         setLayout(new BorderLayout());
 
         // Setup Display Area (masih dipakai untuk mode morse & maze)
@@ -222,43 +223,52 @@ public class EscapeRoomGUI extends JFrame {
         showTextMode();
         clear();
         print("=== COMDEV: Commit of Development ===");
-        print("Status: Menjalankan hidup.exe...");
-        print("\nKamu berdiri di persimpangan jalan.");
-        print("Mau langsung kerja cari uang, atau lanjut kuliah?");
-        print("Dua-duanya kelihatan benar, tapi mana yang buatmu tenang?");
-        print("\nIngat: Setiap pilihan adalah COMMIT. Tak bisa di-Undo.");
-        print("\n(Tekan Enter untuk mulai)");
+        print("Siang yang biasa. Lapangan ramai, tawa anak-anak memenuhi udara.");
+        print("Raka berjalan menjauh dari kelompoknya...");
+        print("Matanya tertangkap sebuah mobil gelap di pinggir jalan.");
+        print("Di balik kaca — jajanan kesukaannya tersusun rapi,");
+        print("seperti sengaja dipajang.");
+        print("");
+        print("Dia mendekat. Pintu terbuka sendiri.");
+        print("...");
+        print("Klik. Terkunci.");
+        print("Gas menyebar. Mata Raka berat.");
+        print("Gelap.");
+        print("");
+        print("(Tekan Enter untuk melanjutkan...)");
     }
 
-        void room1() {
-            showSceneMode();
-            scenePanel.setBackground("/asset/bg/room1.png");
-            scenePanel.resetCharPos();
-            scenePanel.setDeskPosition(300, 290, 80, 60); // x, y, lebar, tinggi
-            scenePanel.setInteractDialog("NARRATOR",
-                "--- ROOM 1: SALAH KODE ---",
-                "Pikiranmu lagi ruwet, kayak kode yang banyak Error-nya.",
-                "Kamu butuh angka 'kunci' supaya sistem ini terbuka:",
-                "  Target: 2026  |  Sekarang: 1000",
-                "Hanya gunakan digit pertama target, sisanya digit sekarang.",
-                "",
-                "Berapa angka 'Kunci' yang kurang?"
-            );
-        }
+    void room1() {
+        showSceneMode();
+        scenePanel.setBackground("/asset/bg/room1.png");
+        scenePanel.resetCharPos();
+        scenePanel.setDeskPosition(300, 290, 80, 60);
+        scenePanel.setInteractDialog("NARRATOR",
+            "--- ROOM 1: KORAN LUSUH ---",
+            "Raka terbangun. Ruangan pengap, cahaya redup.",
+            "Di lantai, secarik koran lusuh tergeletak.",
+            "  'Sindikat pengemis anak beroperasi di kota...'",
+            "  'Korban dipilih berdasarkan kecerdasan dan usia...'",
+            "Di pojok koran, ada angka yang dilingkari tangan seseorang.",
+            "  Target: 2026  |  Sekarang: 1000",
+            "  Gunakan digit pertama target, sisanya digit sekarang.",
+            "Berapa angka yang kurang?"
+        );
+    }
 
     void room2() {
         showSceneMode();
-        // Ganti "" dengan path gambar nanti, contoh: "/assets/bg/room2.png"
         scenePanel.setBackground("/asset/bg/room1.png");
         scenePanel.setDialog("NARRATOR",
-            "--- ROOM 2: WAKTU TERBATAS ---",
-            "Kamu ngerasa tertinggal dari teman-temanmu.",
-            "Ada yang sudah sukses, ada yang masih berjuang.",
-            "",
-            "Jangan panik. Ikuti polanya:",
-            "01:00 -> 03:30 -> 06:00 -> ...",
-            "",
-            "Jam berapa selanjutnya? (Format 0000)"
+            "--- ROOM 2: SUARA DARI BALIK DINDING ---",
+            "Raka melangkah masuk ke ruangan berikutnya.",
+            "Di dinding — foto-foto anak. Banyak. Dengan tanggal di bawahnya.",
+            "Di pojok setiap foto, selalu ada satu sosok yang sama. Pria bertopeng.",
+            "Dari sudut ruangan, rekaman tua berputar sendiri...",
+            "  'Diam. Jalan terus. Minta sampai dapat.'",
+            "Di jam dinding yang rusak, jarum bergerak dalam pola aneh.",
+            "  01:00 -> 03:30 -> 06:00 -> ...",
+            "Jam berapa selanjutnya? (Format: 0000)"
         );
         input.setEnabled(true);
         input.requestFocusInWindow();
@@ -266,28 +276,44 @@ public class EscapeRoomGUI extends JFrame {
 
     void room3() {
         showSceneMode();
-        // Ganti "" dengan path gambar nanti, contoh: "/assets/bg/room3.png"
         scenePanel.setBackground("/asset/bg/room1.png");
         scenePanel.setDialog("NARRATOR",
-            "--- ROOM 3: SUARA BERBISIK ---",
-            "Banyak orang bilang: 'Buat apa sekolah tinggi?'",
-            "Tapi hatimu bilang: 'Aku butuh ilmu lebih banyak.'",
-            "",
-            "Mana yang kamu pilih?",
-            "1. Menyerah saja.",
-            "2. Terus belajar (Update diri).",
-            "3. Ikut-ikutan orang lain."
+            "--- ROOM 3: NAMAMU ADA DI SINI ---",
+            "Di meja, sebuah buku catatan terbuka.",
+            "Daftar nama anak-anak. Puluhan. Semua sudah dicoret — kecuali satu.",
+            "Paling bawah. Nama Raka. Belum dicoret.",
+            "Di balik buku, ada cermin retak. Bayangan berbisik:",
+            "  1. Menyerah dan tunggu dijemput.",
+            "  2. Terus cari jalan keluar.",
+            "  3. Ikut saja apa kata mereka.",
+            "Mana pilihanmu?"
         );
         input.setEnabled(true);
         input.requestFocusInWindow();
     }
 
     void roomMazeIntro() {
-        showMazeMode();
-        print("--- ROOM 4: JALAN BERLIKU ---");
-        print("Dunia luar itu luas dan membingungkan.");
-        print("Cari jalan keluarmu di sini sebelum waktumu habis.");
-        print("\n(Gunakan W/A/S/D untuk jalan)");
+        showTextMode();
+        clear();
+        print("--- KONFRONTASI ---");
+        print("Raka berhasil membuka pintu room 3. Udara segar dari lorong menyambutnya.");
+        print("Tapi —");
+        print("Sebuah sosok berdiri di ujung lorong. Topeng putih. Tubuh besar. Diam.");
+        print("Lalu dia berbicara, pelan tapi dingin:");
+        print("");
+        print("  \"Kamu pintar. Anak pintar... harganya mahal.\"");
+        print("");
+        print("Raka tidak menunggu kalimat berikutnya. Dia berlari.");
+        print("");
+        Timer t = new Timer(3000, e -> {
+            showMazeMode();
+            print("--- KABUR! ---");
+            print("Langkah kaki berat terdengar di belakang.");
+            print("Lorong gelap. Banyak belokan. Raka tidak punya waktu.");
+            print("(Gunakan W/A/S/D untuk kabur!)");
+        });
+        t.setRepeats(false);
+        t.start();
     }
 
     void room4() {
@@ -295,7 +321,7 @@ public class EscapeRoomGUI extends JFrame {
         showTextMode();
         clear();
         input.setEnabled(false);
-        print("--- ROOM 5: JANGAN LUPA ---");
+        print("--- ROOM 5: MEMORI ---");
         print("Seringkali kita lupa tujuan awal karena terlalu sibuk.");
         print("Simpan angka ini baik-baik di kepalamu...");
         String kode = "8821";
@@ -314,7 +340,7 @@ public class EscapeRoomGUI extends JFrame {
         // Room morse — pakai lamp mode
         showLampMode();
         clear();
-        print("--- ROOM 6: SINYAL HARAPAN ---");
+        print("--- ROOM 6: SINYAL DARI LUAR ---");
         print("Di tempat gelap, selalu ada cahaya.");
         print("Perhatikan lampu itu, dia membisikkan sebuah kode.");
         print("Tulis kodenya di sini...");

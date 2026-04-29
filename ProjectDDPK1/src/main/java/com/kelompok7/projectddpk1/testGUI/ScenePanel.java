@@ -56,10 +56,11 @@ public class ScenePanel extends JPanel {
     private static final int DIR_RIGHT = 3;
 
     private static final int[][] DIR_DEF = {
-        {0, 0, 4},  // DOWN
-        {1, 3, 3},  // UP
-        {2, 0, 3},  // LEFT
-        {2, 3, 3},  // RIGHT
+        // {Row, Col_Mulai, Jumlah_Frame}
+        {1, 0, 3},  // DOWN  -> Baris 2 (index 1), mulai kolom 0, ambil 3 frame
+        {1, 3, 3},  // UP    -> Baris 2 (index 1), mulai kolom 3, ambil 3 frame
+        {2, 0, 3},  // LEFT  -> Baris 3 (index 2), mulai kolom 0, ambil 3 frame
+        {2, 3, 3},  // RIGHT -> Baris 3 (index 2), mulai kolom 3, ambil 3 frame
     };
 
     private BufferedImage[][] mcFrames;

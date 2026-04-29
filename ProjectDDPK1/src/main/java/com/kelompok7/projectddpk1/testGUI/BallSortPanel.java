@@ -11,8 +11,15 @@ public class BallSortPanel extends JPanel {
     private final int MAX_SIZE = 4;
     private EscapeRoomGUI parent;
 
+    private int moves = 0;
+    private final int MAX_MOVES = 20;
+    private JLabel movesLabel;
+    private Timer puzzleTimer;
+    
+    
     public BallSortPanel(EscapeRoomGUI parent) {
         this.parent = parent;
+        this.setLayout(new BorderLayout());
         setBackground(Color.BLACK);
         
         for (int i = 0; i < 4; i++) {
@@ -37,6 +44,19 @@ public class BallSortPanel extends JPanel {
         tubes[2].push(Color.RED); 
         tubes[2].push(Color.BLUE); 
         tubes[2].push(Color.GREEN);
+        
+        movesLabel = new JLabel("Moves: 0/" + MAX_MOVES, JLabel.CENTER);
+        movesLabel.setForeground(Color.WHITE);
+        
+        add(movesLabel, BorderLayout.NORTH);
+
+        puzzleTimer = new Timer(1000, e -> {
+        if (moves >= MAX_MOVES && !checkWinLogic()) {
+            puzzleTimer.stop();
+            parent.gameOver();
+        }
+        });
+        puzzleTimer.start();
 
         // Tabung 3: KOSONG (Wajib kosong agar bisa dimainkan)
 
@@ -51,6 +71,7 @@ public class BallSortPanel extends JPanel {
             }
         });
     }
+    
 
     private void handleTubeClick(int index) {
         if (selectedColor == null) {
@@ -63,13 +84,16 @@ public class BallSortPanel extends JPanel {
             if (tubes[index].size() < MAX_SIZE) {
                 tubes[index].push(selectedColor);
                 selectedColor = null;
+                
+                moves++;
+                movesLabel.setText("Moves: " + moves + "/" + MAX_MOVES);
                 checkWin();
             }
         }
         repaint();
     }
 
-    private void checkWin() {
+    private boolean checkWinLogic() {
         int solvedTubes = 0;
         for (Stack<Color> tube : tubes) {
             if (tube.isEmpty()) {
@@ -83,13 +107,20 @@ public class BallSortPanel extends JPanel {
                 if (allSame) solvedTubes++;
             }
         }
-        
-        // Menang jika 3 tabung penuh warna sama & 1 tabung kosong (total 4 kondisi valid)
-        if (solvedTubes == 4) {
+        return solvedTubes == 4;
+    }
+    
+     private boolean checkWin() {
+        // Panggil logika yang sudah ada
+        boolean won = checkWinLogic();
+    
+        if (won) {
+            puzzleTimer.stop(); // Bagus kalau distop di sini juga
             JOptionPane.showMessageDialog(this, "Warna Terpola! Sistem Berhasil Diurutkan.");
             parent.nextFromBallSort(); 
         }
-    }
+    return won;
+}
 
     @Override
     protected void paintComponent(Graphics g) {
