@@ -273,6 +273,15 @@ public class EscapeRoomGUI extends JFrame {
         input.setEnabled(true);
         input.requestFocusInWindow();
     }
+    
+     void roomBrankas() {
+        // Tampilkan panel brankas interaktif
+        centerPanel.removeAll();
+        centerPanel.add(new BrankasRoom1(this), BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
+        input.setEnabled(false); // input dinonaktifkan, kontrol via klik mouse
+    }
 
     void room3() {
         showSceneMode();
@@ -394,7 +403,7 @@ public class EscapeRoomGUI extends JFrame {
     void ending() {
         showSceneMode();
         // Ganti "" dengan path gambar ending nanti
-        scenePanel.setBackground("/asset/bg/BG-Scene-Penculikan.jpg");
+        scenePanel.setBackground("/asset/bg/SuperMarket.jpg");
         scenePanel.setDialog("SISTEM",
             "--- SISTEM BERHASIL DI-UPDATE ---",
             "Klik. Pintu masa depan terbuka.",
@@ -455,7 +464,7 @@ public class EscapeRoomGUI extends JFrame {
         switch (state) {
             case 0: state = 1; room1(); break;
             case 1: if (inputUser.equals("1026"))      { state = 2; room2(); } else gameOver(); break;
-            case 2: if (inputUser.equals("0830"))      { state = 3; room3(); } else gameOver(); break;
+            case 2: if (inputUser.equals("0830"))      { state = 3; roomBrankas(); } else gameOver(); break;
             case 3: if (inputUser.equals("2"))         { state = 4; roomMazeIntro(); } else gameOver(); break;
             case 4:
                 mazePanel.movePlayer(inputUser.toUpperCase().charAt(0));
