@@ -4,6 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.Timer;
+import java.util.ArrayList;
+import java.awt.Rectangle;
+import java.util.List;
+
+
 
 public class EscapeRoomGUI extends JFrame {
 
@@ -58,12 +63,9 @@ public class EscapeRoomGUI extends JFrame {
         lamp.setBackground(Color.BLACK);
 
         // Inisialisasi panel-panel
-        mazePanel = new MazeGUI();
+        //mazePanel = new MazeGUI(this);
         scenePanel = new ScenePanel();
-        scenePanel.setOnDialogShown(() -> {
-        input.setEnabled(true);
-        input.requestFocusInWindow();
-    });
+       
 
         input.addActionListener(e -> {
             String userInput = input.getText();
@@ -81,14 +83,12 @@ public class EscapeRoomGUI extends JFrame {
         setVisible(true);
         SwingUtilities.invokeLater(() -> {
         input.requestFocusInWindow();
+        input.setEnabled(false);
         cutscene.play();
-});
+        });
+        
     }
 
-    // ================================================================
-    // HELPER: PRINT & CLEAR
-    // (print() hanya bekerja saat mode teks/lamp aktif)
-    // ================================================================
 
     void print(String text) {
         display.append(text + "\n");
@@ -117,7 +117,10 @@ public class EscapeRoomGUI extends JFrame {
         scenePanel.resetCharPos();
         input.setEnabled(false); 
         scenePanel.requestFocusInWindow(); 
-        SwingUtilities.invokeLater(() -> scenePanel.requestFocusInWindow());  
+        SwingUtilities.invokeLater(() -> scenePanel.requestFocusInWindow());
+        scenePanel.enableCollision(false); 
+        scenePanel.setRenderScale(1.0f);
+        scenePanel.clearOnDialogShown(); 
     }
 
     // Mode lama: teks hijau di layar hitam
@@ -149,7 +152,11 @@ public class EscapeRoomGUI extends JFrame {
         centerPanel.add(mazePanel, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
+        input.setEnabled(false);
+        mazePanel.requestFocusInWindow();
     }
+    
+    
 
     // ================================================================
     // MORSE
@@ -207,17 +214,7 @@ public class EscapeRoomGUI extends JFrame {
         timer.start();
     }
 
-    // ================================================================
-    // STORY — SEMUA ROOM
-    //
-    // Cara pakai ScenePanel di setiap room:
-    //   1. showSceneMode()                        <- aktifkan mode scene
-    //   2. scenePanel.setBackground("path")       <- pasang gambar background
-    //   3. scenePanel.setDialog("NAMA", "teks..") <- set teks dialog
-    //
-    // Kalau gambar belum ada, cukup tulis "" untuk path-nya.
-    // Nanti tinggal ganti path-nya saja tanpa ubah yang lain.
-    // ================================================================
+  
 
     void intro() {
         showTextMode();
@@ -236,13 +233,17 @@ public class EscapeRoomGUI extends JFrame {
         print("Gelap.");
         print("");
         print("(Tekan Enter untuk melanjutkan...)");
+        input.setEnabled(true);
+        input.requestFocusInWindow();
     }
 
     void room1() {
         showSceneMode();
         scenePanel.setBackground("/asset/bg/room1.png");
         scenePanel.resetCharPos();
-        scenePanel.setDeskPosition(300, 290, 80, 60);
+        scenePanel.clearOnDialogShown(); 
+        scenePanel.setDeskPosition(354,379, 80, 60);
+        scenePanel.setInteractHint("[ E ] Baca Koran");
         scenePanel.setInteractDialog("NARRATOR",
             "--- ROOM 1: KORAN LUSUH ---",
             "Raka terbangun. Ruangan pengap, cahaya redup.",
@@ -254,6 +255,10 @@ public class EscapeRoomGUI extends JFrame {
             "  Gunakan digit pertama target, sisanya digit sekarang.",
             "Berapa angka yang kurang?"
         );
+        scenePanel.setOnDialogShown(() -> {
+        input.setEnabled(true);
+        input.requestFocusInWindow();
+    });
     }
 
     void room2() {
@@ -274,6 +279,31 @@ public class EscapeRoomGUI extends JFrame {
         input.requestFocusInWindow();
     }
     
+        void roomAsset1() {
+            showSceneMode();
+            scenePanel.setBackground("/asset/bg/room1.png");
+            scenePanel.clearOnDialogShown(); 
+            scenePanel.setDeskPosition(49, 396, 80, 80);
+            scenePanel.setInteractHint("[ E ] Buka Brankas");
+    
+            // Hint & dialog saat dekat brankas
+            scenePanel.setInteractDialog("RAKA",
+            "Ini... brankas.",
+            "Ada tiga tombol di sini.",
+            "Kode yang benar pasti bisa membukanya."
+            );
+    
+        // Setelah dialog interact muncul, tampilkan gambar brankas zoom
+           scenePanel.setOnDialogShown(() -> {
+            // Tunggu sebentar biar dialog kebaca, lalu tampilkan brankas
+            Timer t = new Timer(1500, e -> roomBrankas());
+            t.setRepeats(false);
+            t.start();
+            });
+    
+            input.setEnabled(false);
+            scenePanel.requestFocusInWindow();
+}
      void roomBrankas() {
         // Tampilkan panel brankas interaktif
         centerPanel.removeAll();
@@ -315,11 +345,56 @@ public class EscapeRoomGUI extends JFrame {
         print("Raka tidak menunggu kalimat berikutnya. Dia berlari.");
         print("");
         Timer t = new Timer(3000, e -> {
-            showMazeMode();
+            showSceneMode();
+            scenePanel.setBackground("/asset/bg/maze.png");
+            scenePanel.resetCharPos();
+            scenePanel.setCharPos(76, 109);
+            scenePanel.enableCollision(true);
+            scenePanel.setRenderScale(0.5f);
+            
+            List<Rectangle> walls = new ArrayList<>();
+            walls.add(new Rectangle(1, 3, 678, 12));
+            walls.add(new Rectangle(1, 3, 10, 560));
+            walls.add(new Rectangle(642, 295, 37, 233));
+            walls.add(new Rectangle(97,  287, 44,  76));
+            walls.add(new Rectangle(38,  361, 14,  135));
+            walls.add(new Rectangle(50,  363, 135, 70));
+            walls.add(new Rectangle(53,  428, 129, 5));
+            walls.add(new Rectangle(222, 430, 46,  29));
+            walls.add(new Rectangle(268, 459, 31,  36));
+            walls.add(new Rectangle(332, 499, 15,  28));
+            walls.add(new Rectangle(304, 426, 86,  10));
+            walls.add(new Rectangle(265, 292, 35,  67));
+            walls.add(new Rectangle(301, 357, 133, 9));
+            walls.add(new Rectangle(435, 356, 40,  75));
+            walls.add(new Rectangle(260, 75,  44,  78));
+            walls.add(new Rectangle(178, 10,  35,  68));
+            walls.add(new Rectangle(294, 74,  58,  13));
+            walls.add(new Rectangle(348, 80,  40,  68));
+            walls.add(new Rectangle(432, 5,   39,  76));
+            walls.add(new Rectangle(513, 73,  59,  79));
+            walls.add(new Rectangle(571, 116, 42,  32));
+            walls.add(new Rectangle(625, 8,   52,  140));
+            walls.add(new Rectangle(611, 121, 62,  28));
+            walls.add(new Rectangle(604, 215, 68,  11));
+            walls.add(new Rectangle(555, 360, 44,  36));
+            walls.add(new Rectangle(590, 428, 46,  77));
+            walls.add(new Rectangle(538, 491, 23,  40));
+            scenePanel.setCollisionRects(walls);
+            scenePanel.setDeskPosition(655, 482, 60, 60);
             print("--- KABUR! ---");
             print("Langkah kaki berat terdengar di belakang.");
             print("Lorong gelap. Banyak belokan. Raka tidak punya waktu.");
             print("(Gunakan W/A/S/D untuk kabur!)");
+        });
+        
+        scenePanel.setOnDialogShown(() -> {
+            Timer t2 = new Timer(1500, ev -> {
+                state = 5;
+                room4();
+            });
+            t2.setRepeats(false);
+            t2.start();
         });
         t.setRepeats(false);
         t.start();
@@ -453,6 +528,8 @@ public class EscapeRoomGUI extends JFrame {
          if (state == 99) {
             if (inputUser.trim().equalsIgnoreCase("Y")) {
                 state = 1;
+                scenePanel.resetCharPos();
+                scenePanel.clearInteractDialog();
                 room1();
             }   
             else {
@@ -464,7 +541,7 @@ public class EscapeRoomGUI extends JFrame {
         switch (state) {
             case 0: state = 1; room1(); break;
             case 1: if (inputUser.equals("1026"))      { state = 2; room2(); } else gameOver(); break;
-            case 2: if (inputUser.equals("0830"))      { state = 3; roomBrankas(); } else gameOver(); break;
+            case 2: if (inputUser.equals("0830"))      { state = 3; roomAsset1(); } else gameOver(); break;
             case 3: if (inputUser.equals("2"))         { state = 4; roomMazeIntro(); } else gameOver(); break;
             case 4:
                 mazePanel.movePlayer(inputUser.toUpperCase().charAt(0));

@@ -8,8 +8,10 @@ public class MazeGUI extends JPanel {
     private char[][] grid;
     private int playerX;
     private int playerY;
+    private EscapeRoomGUI parent;
 
-    public MazeGUI() {
+    public MazeGUI(EscapeRoomGUI parent) {
+        this.parent = parent;
         grid = new char[][] {
             {'|','|','|','|','|','|','|','|','|','|','|','|','|','|','|'},
             {'|',' ',' ',' ','|',' ',' ',' ',' ',' ','|',' ',' ',' ','|'},
@@ -28,6 +30,26 @@ public class MazeGUI extends JPanel {
             {'|','|','|','|','|','|','|','|','|','|','|','|','|','|','|'}
         };
 
+        setFocusable(true);
+        
+        addKeyListener(new java.awt.event.KeyAdapter() {
+        @Override
+        public void keyPressed(java.awt.event.KeyEvent e) {
+            switch (e.getKeyCode()) {
+                case java.awt.event.KeyEvent.VK_W: movePlayer('W'); break;
+                case java.awt.event.KeyEvent.VK_A: movePlayer('A'); break;
+                case java.awt.event.KeyEvent.VK_S: movePlayer('S'); break;
+                case java.awt.event.KeyEvent.VK_D: movePlayer('D'); break;
+            }
+            // Cek exit setelah gerak
+            if (isExitReached()) {
+                parent.state = 5;
+                parent.room4();
+                }
+            }
+        });
+
+        
         playerX = 1;
         playerY = 1;
 

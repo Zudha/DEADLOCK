@@ -17,9 +17,9 @@ public class BrankasRoom1 extends JPanel {
         loadBrankasImage();
 
         // Tombol Transparan (Koordinat sesuaikan dengan gambar Brankas_Zoom)
-        JButton btn13 = createInvisibleButton(280, 250, 80, 80);
-        JButton btn26 = createInvisibleButton(430, 250, 80, 80);
-        JButton btn67 = createInvisibleButton(580, 250, 80, 80);
+        JButton btn13 = createInvisibleButton(285, 240, 40, 40);
+        JButton btn26 = createInvisibleButton(335, 240, 40, 40);
+        JButton btn67 = createInvisibleButton(385, 240, 40, 40);
 
         btn13.addActionListener(e -> parent.gameOver());
         btn26.addActionListener(e -> parent.gameOver());
@@ -55,7 +55,7 @@ public class BrankasRoom1 extends JPanel {
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false); // Set true untuk melihat kotak tombol saat testing
         btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));  
         return btn;
     }
 

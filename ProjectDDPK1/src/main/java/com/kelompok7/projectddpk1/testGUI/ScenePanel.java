@@ -8,22 +8,10 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
+import java.awt.Rectangle;
 
-/**
- * ScenePanel — panel visual novel dengan karakter yang bisa bergerak.
- *
- * Spritesheet Char_EP2.png: 900x500px → 6 kolom x 4 baris, tiap frame 150x125
- *
- *   Row 0 (y=0):   idle poses
- *     C0=kosong, C1=depan, C2=belakang, C3=diagonal, C4=diagonal, C5=kosong
- *   Row 1 (y=125): jalan depan & belakang
- *     C0-C2 = jalan depan (3 frame), C3-C5 = jalan belakang (3 frame)
- *   Row 2+3 (y=250-500): jalan samping — digabung jadi frame 150x250
- *     C0-C5 menghadap kiri → kanan = flip horizontal
- *
- * Setiap frame di-crop ke bounding box konten (buang area hitam kosong).
- * Karakter di-render ke tinggi RENDER_H px dengan aspek rasio terjaga.
- */
+
 public class ScenePanel extends JPanel {
 
     // ── Dialog ─────────────────────────────────────────────────
@@ -45,11 +33,12 @@ public class ScenePanel extends JPanel {
     private static final Color NAME_COLOR  = new Color(50, 255, 50);
     private static final Font  TEXT_FONT   = new Font("Monospaced", Font.PLAIN, 14);
     private static final Font  NAME_FONT   = new Font("Monospaced", Font.BOLD, 13);
+    private List<Rectangle> collisionRects = new ArrayList<>();
 
     // ── Sprite ─────────────────────────────────────────────────
     private static final String SPRITE_PATH = "/asset/bg/mc2.png";
     private static final int FRAME_W = 150;
-    private static final int FRAME_H = 125;
+    private static final int FRAME_H = 150;
     // Tinggi render karakter di layar (aspek rasio terjaga)
     private static final int RENDER_H = 100;
 
@@ -66,12 +55,20 @@ public class ScenePanel extends JPanel {
     private int   charDir   = DIR_DOWN;
     private int   charFrame = 0;
     private int   frameTick = 0;
+    private int prevDir = DIR_DOWN;
     private static final int FRAME_DELAY = 10;
     private static final int MOVE_SPEED  = 3;
+    private float renderScale = 1.0f; // default normal
 
     // ── Zona interaksi ──────────────────────────────────────────
     private int deskX = 150, deskY = 150, deskW = 80, deskH = 80;
     private static final int INTERACT_RADIUS = 80;
+    private String interactHint = "[ E ] Interaksi";
+    
+    //debug untuk melihat kordinat
+    private int debugX = 0, debugY = 0;
+    private boolean showDebug = true;
+    private boolean collisionEnabled = false;
 
     // ── Input & Loop ────────────────────────────────────────────
     private boolean keyW, keyA, keyS, keyD;
@@ -84,11 +81,26 @@ public class ScenePanel extends JPanel {
         loadSprite();
         setupKeys();
         startLoop();
+        
+        //kode untuk melihat kordinat
+        addMouseListener(new java.awt.event.MouseAdapter() {
+    @Override
+    public void mouseClicked(java.awt.event.MouseEvent e) {
+        debugX = e.getX();
+        debugY = e.getY();
+        repaint();
+        System.out.println("Klik: X=" + debugX + " Y=" + debugY);
+        }
+        });
     }
 
     // ── API ─────────────────────────────────────────────────────
     public void setDeskPosition(int x, int y, int w, int h) {
         deskX = x; deskY = y; deskW = w; deskH = h;
+    }
+    
+    public void setInteractHint(String hint) {
+        this.interactHint = hint;
     }
 
     public void setInteractDialog(String name, String... textLines) {
@@ -115,8 +127,8 @@ public class ScenePanel extends JPanel {
 
             // SIDE (LEFT/RIGHT): Masalahnya ada di sini. 
             // Kamu harus memastikan y dimulai dari 250 dan mengambil tinggi 250 (Row 2 + 3).
-            mcFrames[DIR_LEFT] = sliceSideWalk(sheet, 0, 6);
-            mcFrames[DIR_RIGHT] = flipHoriz(mcFrames[DIR_LEFT]);
+            mcFrames[DIR_LEFT] = sliceSideWalk(sheet, 0, 3);
+            mcFrames[DIR_RIGHT] = sliceSideWalk(sheet, 3, 3);
 
             // RE-CALCULATE RENDER WIDTH: Agar ukuran karakter konsisten di semua arah
             for (int d = 0; d < 4; d++) {
@@ -141,9 +153,10 @@ public class ScenePanel extends JPanel {
         return frames;
     }
 
-    /**
-     * Gabungkan Row 2 (badan) + Row 3 (kaki) untuk setiap kolom → frame penuh karakter samping.
-     */
+    public void setRenderScale(float scale) {
+        this.renderScale = scale;
+    }
+    
     private BufferedImage[] sliceSideWalk(BufferedImage sheet, int colStart, int count) {
         BufferedImage[] frames = new BufferedImage[count];
         for (int i = 0; i < count; i++) {
@@ -182,7 +195,7 @@ public class ScenePanel extends JPanel {
         return src.getSubimage(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
 
-    /** Flip array gambar secara horizontal. */
+
     private BufferedImage[] flipHoriz(BufferedImage[] src) {
         if (src == null) return new BufferedImage[0];
         BufferedImage[] dst = new BufferedImage[src.length];
@@ -208,6 +221,13 @@ public class ScenePanel extends JPanel {
         return out;
     }
 
+    public void setCollisionRects(List<Rectangle> rects) {
+        this.collisionRects = rects;
+    }
+
+    public void clearCollisionRects() {
+        this.collisionRects.clear();
+    }
     // ── Key bindings ────────────────────────────────────────────
     private void setupKeys() {
         InputMap  im = getInputMap(WHEN_IN_FOCUSED_WINDOW);
@@ -225,7 +245,11 @@ public class ScenePanel extends JPanel {
             public void actionPerformed(ActionEvent e) { tryInteract(); }
         });
     }
-
+    
+    public void clearOnDialogShown() {
+    this.onDialogShown = null;
+    }
+    
     private void bindKey(InputMap im, ActionMap am, String id, int vk, boolean pressed, Runnable action) {
         im.put(KeyStroke.getKeyStroke(vk, 0, !pressed), id);
         am.put(id, new AbstractAction() { public void actionPerformed(ActionEvent e) { action.run(); } });
@@ -246,6 +270,10 @@ public class ScenePanel extends JPanel {
         return Math.hypot(cx - (deskX + deskW/2), cy - (deskY + deskH/2)) <= INTERACT_RADIUS;
     }
 
+    public void setCharPos(float x, float y) {
+        charX = x;
+        charY = y;
+    }
     // ── Loop & update ───────────────────────────────────────────
     private void startLoop() {
         gameLoop = new Timer(16, e -> update());
@@ -262,17 +290,40 @@ public class ScenePanel extends JPanel {
         boolean moving = false;
         float nx = charX, ny = charY;
         if (keyW) { ny -= MOVE_SPEED; charDir = DIR_UP;    moving = true; }
-        if (keyS) { ny += MOVE_SPEED; charDir = DIR_DOWN;  moving = true; }
-        if (keyA) { nx -= MOVE_SPEED; charDir = DIR_LEFT;  moving = true; }
-        if (keyD) { nx += MOVE_SPEED; charDir = DIR_RIGHT; moving = true; }
+        else if (keyS) { ny += MOVE_SPEED; charDir = DIR_DOWN;  moving = true; }
+        else if (keyA) { nx -= MOVE_SPEED; charDir = DIR_LEFT;  moving = true; }
+        else if (keyD) { nx += MOVE_SPEED; charDir = DIR_RIGHT; moving = true; }
 
         int rw = renderW[charDir];
         int maxX = getWidth()  - rw;
         int maxY = (lines.isEmpty() ? getHeight() : getHeight() - BOX_HEIGHT - 40) - RENDER_H;
-        charX = Math.max(0, Math.min(nx, maxX));
-        charY = Math.max(0, Math.min(ny, maxY));
+        nx = Math.max(0, Math.min(nx, maxX));
+        ny = Math.max(0, Math.min(ny, maxY));
 
-        if (moving) {
+        
+        float margin = rw * 0.35f; 
+        float scaledH  = RENDER_H * renderScale;
+        float footY    = ny    + scaledH - 5;
+        float footYcur = charY + scaledH - 5;
+        float footXL   = nx    + margin;
+        float footXR   = nx    + rw - margin;
+        float footXC   = nx    + rw / 2f;
+        float footXLcur = charX + margin;
+        float footXRcur = charX + rw - margin;
+        float footXCcur = charX + rw / 2f;
+        
+        boolean canMoveX = !isWall(footXL, footYcur) && !isWall(footXR, footYcur) && !isWall(footXC, footYcur);
+        boolean canMoveY = !isWall(footXLcur, footY) && !isWall(footXRcur, footY) && !isWall(footXCcur, footY);
+
+        charX = canMoveX ? nx : charX;
+        charY = canMoveY ? ny : charY;
+        
+        if (charDir != prevDir) {
+            charFrame = 0;
+            frameTick = 0;
+            prevDir = charDir;
+            }
+        else if (moving) {
             if (++frameTick >= FRAME_DELAY) {
                 frameTick = 0;
                 if (mcFrames != null && mcFrames[charDir] != null)
@@ -315,6 +366,18 @@ public class ScenePanel extends JPanel {
         charX = 300; charY = 200; charDir = DIR_DOWN; charFrame = 0;
         dialogShown = false; clearDialog(); clearInteractDialog();
     }
+    
+    public void enableCollision(boolean enabled) {
+        this.collisionEnabled = enabled;
+    }
+    
+    private boolean isWall(float x, float y) {
+    if (!collisionEnabled) return false;
+    for (Rectangle r : collisionRects) {
+        if (r.contains(x, y)) return true;
+    }
+    return false;
+}
 
     // ── Render ──────────────────────────────────────────────────
     @Override
@@ -336,13 +399,14 @@ public class ScenePanel extends JPanel {
                 && charFrame < mcFrames[charDir].length
                 && mcFrames[charDir][charFrame] != null) {
             BufferedImage frame = mcFrames[charDir][charFrame];
-            int rw = renderW[charDir];
-            g2.drawImage(frame, (int) charX, (int) charY, rw, RENDER_H, this);
+            int rw = (int)(renderW[charDir] * renderScale);
+            int rh = (int)(RENDER_H * renderScale);
+            g2.drawImage(frame, (int) charX, (int) charY, rw, rh, this);
         }
 
         // 3. Hint interaksi
         if (isNearDesk() && !dialogShown && pendingDialogLines.length > 0) {
-            String hint = "[ E ] Baca Koran";
+            String hint = interactHint;
             g2.setFont(new Font("Monospaced", Font.BOLD, 13));
             FontMetrics fm = g2.getFontMetrics();
             int hw = fm.stringWidth(hint) + 16;
@@ -373,6 +437,23 @@ public class ScenePanel extends JPanel {
             g2.setColor(BOX_BORDER); g2.drawRoundRect(boxX, nameBoxY, nameW, 22, 6, 6);
             g2.setColor(NAME_COLOR); g2.drawString(characterName, boxX + 10, nameBoxY + 15);
         }
+        
+        if (showDebug && collisionEnabled) {
+        g2.setColor(new Color(255, 0, 0, 80));
+        for (Rectangle r : collisionRects) {
+        g2.fillRect(r.x, r.y, r.width, r.height);
+        }
+        g2.setColor(new Color(255, 0, 0, 180));
+        for (Rectangle r : collisionRects) {
+        g2.drawRect(r.x, r.y, r.width, r.height);
+            }
+        }
+        
+        if (showDebug) {
+            g2.setColor(Color.YELLOW);
+            g2.setFont(new Font("Monospaced", Font.BOLD, 13));
+            g2.drawString("X: " + debugX + "  Y: " + debugY, 10, 20);
+            }
 
         g2.setFont(TEXT_FONT);
         g2.setColor(TEXT_COLOR);
@@ -385,4 +466,4 @@ public class ScenePanel extends JPanel {
             textY += fm.getHeight() + 2;
         }
     }
-}
+}   
