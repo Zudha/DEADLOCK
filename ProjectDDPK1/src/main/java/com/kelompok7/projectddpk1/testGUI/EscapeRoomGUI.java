@@ -121,6 +121,7 @@ public class EscapeRoomGUI extends JFrame {
         scenePanel.enableCollision(false); 
         scenePanel.setRenderScale(1.0f);
         scenePanel.clearOnDialogShown(); 
+        scenePanel.enableFog(false);
     }
 
     // Mode lama: teks hijau di layar hitam
@@ -255,6 +256,19 @@ public class EscapeRoomGUI extends JFrame {
             "  Gunakan digit pertama target, sisanya digit sekarang.",
             "Berapa angka yang kurang?"
         );
+        
+        scenePanel.enableCollision(true);
+        List<Rectangle> walls = new ArrayList<>();
+        scenePanel.setCollisionRects(walls);
+        walls.add(new Rectangle(6, 87, 100, 124));
+        walls.add(new Rectangle(104, 83, 22, 41));
+        walls.add(new Rectangle(0, -1, 674, 81));
+        walls.add(new Rectangle(4, 378, 110, 144));
+        walls.add(new Rectangle(108, 443, 37, 37));
+        walls.add(new Rectangle(202, 345, 49, 81));
+        walls.add(new Rectangle(452, 355, 49, 62));
+        walls.add(new Rectangle(322, 366, 51, 45));
+        walls.add(new Rectangle(619, 89, 57, 60));  
         scenePanel.setOnDialogShown(() -> {
         input.setEnabled(true);
         input.requestFocusInWindow();
@@ -283,8 +297,20 @@ public class EscapeRoomGUI extends JFrame {
             showSceneMode();
             scenePanel.setBackground("/asset/bg/room1.png");
             scenePanel.clearOnDialogShown(); 
-            scenePanel.setDeskPosition(49, 396, 80, 80);
+            scenePanel.setDeskPosition(49, 396, 150, 150);
             scenePanel.setInteractHint("[ E ] Buka Brankas");
+            
+            scenePanel.enableCollision(true);
+            List<Rectangle> walls = new ArrayList<>();
+            scenePanel.setCollisionRects(walls);
+            walls.add(new Rectangle(6, 87, 100, 124));
+        walls.add(new Rectangle(104, 83, 22, 41));
+        walls.add(new Rectangle(0, -1, 674, 81));
+        walls.add(new Rectangle(202, 345, 49, 81));
+        walls.add(new Rectangle(452, 355, 49, 62));
+        walls.add(new Rectangle(322, 366, 51, 45));
+        walls.add(new Rectangle(619, 89, 57, 60));
+        walls.add(new Rectangle(6, 407, 69, 121));
     
             // Hint & dialog saat dekat brankas
             scenePanel.setInteractDialog("RAKA",
@@ -345,49 +371,81 @@ public class EscapeRoomGUI extends JFrame {
         print("Raka tidak menunggu kalimat berikutnya. Dia berlari.");
         print("");
         Timer t = new Timer(3000, e -> {
-            showSceneMode();
-            scenePanel.setBackground("/asset/bg/maze.png");
-            scenePanel.resetCharPos();
-            scenePanel.setCharPos(76, 109);
-            scenePanel.enableCollision(true);
-            scenePanel.setRenderScale(0.5f);
-            
-            List<Rectangle> walls = new ArrayList<>();
-            walls.add(new Rectangle(1, 3, 678, 12));
-            walls.add(new Rectangle(1, 3, 10, 560));
-            walls.add(new Rectangle(642, 295, 37, 233));
-            walls.add(new Rectangle(97,  287, 44,  76));
-            walls.add(new Rectangle(38,  361, 14,  135));
-            walls.add(new Rectangle(50,  363, 135, 70));
-            walls.add(new Rectangle(53,  428, 129, 5));
-            walls.add(new Rectangle(222, 430, 46,  29));
-            walls.add(new Rectangle(268, 459, 31,  36));
-            walls.add(new Rectangle(332, 499, 15,  28));
-            walls.add(new Rectangle(304, 426, 86,  10));
-            walls.add(new Rectangle(265, 292, 35,  67));
-            walls.add(new Rectangle(301, 357, 133, 9));
-            walls.add(new Rectangle(435, 356, 40,  75));
-            walls.add(new Rectangle(260, 75,  44,  78));
-            walls.add(new Rectangle(178, 10,  35,  68));
-            walls.add(new Rectangle(294, 74,  58,  13));
-            walls.add(new Rectangle(348, 80,  40,  68));
-            walls.add(new Rectangle(432, 5,   39,  76));
-            walls.add(new Rectangle(513, 73,  59,  79));
-            walls.add(new Rectangle(571, 116, 42,  32));
-            walls.add(new Rectangle(625, 8,   52,  140));
-            walls.add(new Rectangle(611, 121, 62,  28));
-            walls.add(new Rectangle(604, 215, 68,  11));
-            walls.add(new Rectangle(555, 360, 44,  36));
-            walls.add(new Rectangle(590, 428, 46,  77));
-            walls.add(new Rectangle(538, 491, 23,  40));
-            scenePanel.setCollisionRects(walls);
-            scenePanel.setDeskPosition(655, 482, 60, 60);
-            print("--- KABUR! ---");
-            print("Langkah kaki berat terdengar di belakang.");
-            print("Lorong gelap. Banyak belokan. Raka tidak punya waktu.");
-            print("(Gunakan W/A/S/D untuk kabur!)");
-        });
+    
+        centerPanel.removeAll();
+        centerPanel.add(scenePanel, BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
+        input.setEnabled(false);
+        scenePanel.requestFocusInWindow();
+        scenePanel.enableFog(true);
+    
+   
+        scenePanel.setBackground("/asset/bg/maze.png");
+    
+       
+        scenePanel.setCharPos(62, 83);
+        scenePanel.setRenderScale(0.5f);
+    
+   
+        scenePanel.enableCollision(true);
+        List<Rectangle> walls = new ArrayList<>();
         
+        scenePanel.setCollisionRects(walls);
+        walls.add(new Rectangle(0, 3, 51, 299));
+        walls.add(new Rectangle(96, 74, 41, 81));
+        walls.add(new Rectangle(135, 139, 84, 17));
+        walls.add(new Rectangle(177, 154, 42, 66));
+        walls.add(new Rectangle(221, 208, 170, 16));
+        walls.add(new Rectangle(348, 224, 41, 68));
+        walls.add(new Rectangle(51, 213, 87, 13));
+        walls.add(new Rectangle(182, 352, 38, 79));
+        walls.add(new Rectangle(133, 286, 133, 10));
+        walls.add(new Rectangle(263, 287, 38, 79));
+        walls.add(new Rectangle(301, 353, 132, 12));
+        walls.add(new Rectangle(433, 353, 36, 77));
+        walls.add(new Rectangle(159, 492, 81, 35));
+        walls.add(new Rectangle(239, 488, 26, 11));
+        walls.add(new Rectangle(331, 501, 16, 28));
+        walls.add(new Rectangle(455, 498, 31, 30));
+        walls.add(new Rectangle(534, 488, 25, 42));
+        walls.add(new Rectangle(625, 446, 52, 6));
+        walls.add(new Rectangle(434, 280, 77, 14));
+        walls.add(new Rectangle(431, 142, 39, 140));
+        walls.add(new Rectangle(466, 212, 92, 11));
+        walls.add(new Rectangle(591, 282, 47, 13));
+        walls.add(new Rectangle(513, 71, 42, 85));
+        walls.add(new Rectangle(553, 117, 17, 35));
+        walls.add(new Rectangle(611, 117, 62, 36));
+        walls.add(new Rectangle(618, 15, 52, 104));
+        walls.add(new Rectangle(430, 8, 39, 78));
+        walls.add(new Rectangle(470, 4, 148, 12));
+        walls.add(new Rectangle(49, 5, 424, 15));
+        walls.add(new Rectangle(177, 14, 40, 68));
+        walls.add(new Rectangle(260, 71, 41, 87));
+        walls.add(new Rectangle(304, 72, 42, 14));
+        walls.add(new Rectangle(346, 73, 39, 82));
+        walls.add(new Rectangle(385, 142, 50, 10));
+        walls.add(new Rectangle(58, 488, 35, 39));
+        walls.add(new Rectangle(94, 489, 23, 8));
+        walls.add(new Rectangle(510, 282, 49, 82));
+        walls.add(new Rectangle(595, 429, 24, 56));
+        walls.add(new Rectangle(620, 448, 10, 35));
+        walls.add(new Rectangle(596, 354, 40, 9));
+        walls.add(new Rectangle(597, 215, 72, 6));
+        walls.add(new Rectangle(101, 287, 32, 73));
+        walls.add(new Rectangle(470, 424, 82, 6));
+        walls.add(new Rectangle(40, 357, 12, 118));
+        walls.add(new Rectangle(56, 424, 124, 6));
+        walls.add(new Rectangle(263, 427, 7, 71));
+        walls.add(new Rectangle(386, 486, 104, 4));
+        walls.add(new Rectangle(305, 425, 78, 4));
+        walls.add(new Rectangle(302, 490, 45, 7));
+        walls.add(new Rectangle(300, 436, 6, 50));               
+        // 5. Set interaksi pintu keluar
+        scenePanel.setDeskPosition(657, 484, 60, 60);
+        scenePanel.setInteractHint("[ E ] Kabur!");
+        scenePanel.setInteractDialog("RAKA", "Pintunya! Harus kabur sekarang!");
         scenePanel.setOnDialogShown(() -> {
             Timer t2 = new Timer(1500, ev -> {
                 state = 5;
@@ -396,12 +454,12 @@ public class EscapeRoomGUI extends JFrame {
             t2.setRepeats(false);
             t2.start();
         });
-        t.setRepeats(false);
-        t.start();
+    });
+    t.setRepeats(false);
+    t.start();
     }
 
     void room4() {
-        // Room memori — pakai text mode karena ada efek timer (teks hilang lalu muncul lagi)
         showTextMode();
         clear();
         input.setEnabled(false);
@@ -448,7 +506,7 @@ public class EscapeRoomGUI extends JFrame {
         state = 8;
         room7();
     }
-
+    
     void room7() {
         showTextMode();
         clear();

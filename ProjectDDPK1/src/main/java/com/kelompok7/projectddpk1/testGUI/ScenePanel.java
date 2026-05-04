@@ -49,6 +49,9 @@ public class ScenePanel extends JPanel {
 
     private BufferedImage[][] mcFrames; // [arah][frame_index]
     private int[] renderW = new int[4]; // lebar render per arah
+    
+    //fog
+    private boolean fogEnabled = false;
 
     // ── Karakter state ──────────────────────────────────────────
     private float charX = 300, charY = 200;
@@ -62,12 +65,12 @@ public class ScenePanel extends JPanel {
 
     // ── Zona interaksi ──────────────────────────────────────────
     private int deskX = 150, deskY = 150, deskW = 80, deskH = 80;
-    private static final int INTERACT_RADIUS = 80;
+    private static final int INTERACT_RADIUS = 40;
     private String interactHint = "[ E ] Interaksi";
     
     //debug untuk melihat kordinat
     private int debugX = 0, debugY = 0;
-    private boolean showDebug = true;
+    private boolean showDebug = false;
     private boolean collisionEnabled = false;
 
     // ── Input & Loop ────────────────────────────────────────────
@@ -139,7 +142,7 @@ public class ScenePanel extends JPanel {
                 }
             }
         } catch (IOException e) { e.printStackTrace(); }
-}
+    }
 
     /** Ambil n frame dari satu row spritesheet, lalu crop ke konten. */
     private BufferedImage[] sliceRow(BufferedImage sheet, int row, int colStart, int count) {
@@ -157,6 +160,10 @@ public class ScenePanel extends JPanel {
         this.renderScale = scale;
     }
     
+    public void enableFog(boolean enabled) {
+        this.fogEnabled = enabled;
+    }
+
     private BufferedImage[] sliceSideWalk(BufferedImage sheet, int colStart, int count) {
         BufferedImage[] frames = new BufferedImage[count];
         for (int i = 0; i < count; i++) {
@@ -223,11 +230,13 @@ public class ScenePanel extends JPanel {
 
     public void setCollisionRects(List<Rectangle> rects) {
         this.collisionRects = rects;
+        System.out.println("CollisionRects set: " + rects.size() + " rects");
     }
 
     public void clearCollisionRects() {
         this.collisionRects.clear();
     }
+
     // ── Key bindings ────────────────────────────────────────────
     private void setupKeys() {
         InputMap  im = getInputMap(WHEN_IN_FOCUSED_WINDOW);
@@ -244,10 +253,19 @@ public class ScenePanel extends JPanel {
         am.put("EP", new AbstractAction() {
             public void actionPerformed(ActionEvent e) { tryInteract(); }
         });
+        
+        // Di setupKeys(), tambah toggle collision dengan tombol F1
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, false), "TOGGLE_COL");
+        am.put("TOGGLE_COL", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                collisionEnabled = !collisionEnabled;
+                System.out.println("Collision: " + collisionEnabled);
+            }
+        }); 
     }
     
     public void clearOnDialogShown() {
-    this.onDialogShown = null;
+        this.onDialogShown = null;
     }
     
     private void bindKey(InputMap im, ActionMap am, String id, int vk, boolean pressed, Runnable action) {
@@ -274,6 +292,7 @@ public class ScenePanel extends JPanel {
         charX = x;
         charY = y;
     }
+
     // ── Loop & update ───────────────────────────────────────────
     private void startLoop() {
         gameLoop = new Timer(16, e -> update());
@@ -286,7 +305,6 @@ public class ScenePanel extends JPanel {
     private void update() {
         if (dialogShown) { repaint(); return; }
 
-            
         boolean moving = false;
         float nx = charX, ny = charY;
         if (keyW) { ny -= MOVE_SPEED; charDir = DIR_UP;    moving = true; }
@@ -295,35 +313,36 @@ public class ScenePanel extends JPanel {
         else if (keyD) { nx += MOVE_SPEED; charDir = DIR_RIGHT; moving = true; }
 
         int rw = renderW[charDir];
-        int maxX = getWidth()  - rw;
-        int maxY = (lines.isEmpty() ? getHeight() : getHeight() - BOX_HEIGHT - 40) - RENDER_H;
+        int scaledRW = (int)(rw * renderScale);
+        int maxX = getWidth() - scaledRW;
+        int rh = (int)(RENDER_H * renderScale);
+        int maxY = (lines.isEmpty() ? getHeight() : getHeight() - BOX_HEIGHT - 40) - rh;
         nx = Math.max(0, Math.min(nx, maxX));
         ny = Math.max(0, Math.min(ny, maxY));
 
         
-        float margin = rw * 0.35f; 
-        float scaledH  = RENDER_H * renderScale;
-        float footY    = ny    + scaledH - 5;
-        float footYcur = charY + scaledH - 5;
-        float footXL   = nx    + margin;
-        float footXR   = nx    + rw - margin;
-        float footXC   = nx    + rw / 2f;
-        float footXLcur = charX + margin;
-        float footXRcur = charX + rw - margin;
-        float footXCcur = charX + rw / 2f;
         
-        boolean canMoveX = !isWall(footXL, footYcur) && !isWall(footXR, footYcur) && !isWall(footXC, footYcur);
-        boolean canMoveY = !isWall(footXLcur, footY) && !isWall(footXRcur, footY) && !isWall(footXCcur, footY);
+        
+        Rectangle nextBounds = new Rectangle((int)nx, (int)ny, scaledRW, rh);
 
-        charX = canMoveX ? nx : charX;
-        charY = canMoveY ? ny : charY;
+        boolean collide = false;
+        for (Rectangle r : collisionRects) {
+            if (nextBounds.intersects(r)) {
+            collide = true;
+            break;
+            }
+        }
+
+        if (!collide) {
+            charX = nx;
+            charY = ny;
+            }
         
         if (charDir != prevDir) {
             charFrame = 0;
             frameTick = 0;
             prevDir = charDir;
-            }
-        else if (moving) {
+        } else if (moving) {
             if (++frameTick >= FRAME_DELAY) {
                 frameTick = 0;
                 if (mcFrames != null && mcFrames[charDir] != null)
@@ -334,6 +353,7 @@ public class ScenePanel extends JPanel {
             frameTick = 0;
         }
         repaint();
+        
     }
 
     // ── Public setters ──────────────────────────────────────────
@@ -369,15 +389,16 @@ public class ScenePanel extends JPanel {
     
     public void enableCollision(boolean enabled) {
         this.collisionEnabled = enabled;
+        System.out.println("Collision enabled: " + enabled);
     }
     
     private boolean isWall(float x, float y) {
-    if (!collisionEnabled) return false;
-    for (Rectangle r : collisionRects) {
-        if (r.contains(x, y)) return true;
+        if (!collisionEnabled) return false;
+        for (Rectangle r : collisionRects) {
+            if (r.contains(x, y)) return true;
+        }
+        return false;
     }
-    return false;
-}
 
     // ── Render ──────────────────────────────────────────────────
     @Override
@@ -402,6 +423,69 @@ public class ScenePanel extends JPanel {
             int rw = (int)(renderW[charDir] * renderScale);
             int rh = (int)(RENDER_H * renderScale);
             g2.drawImage(frame, (int) charX, (int) charY, rw, rh, this);
+        }
+
+        // Debug: collision rect overlay
+        if (showDebug && collisionEnabled) {
+            g2.setColor(new Color(255, 0, 0, 80));
+            for (Rectangle r : collisionRects) {
+                g2.fillRect(r.x, r.y, r.width, r.height);
+            }
+            g2.setColor(new Color(255, 0, 0, 180));
+            for (Rectangle r : collisionRects) {
+                g2.drawRect(r.x, r.y, r.width, r.height);
+            }
+        }
+
+        // rw, rh, margin dideklarasi di luar if(showDebug) agar bisa dipakai di bawah
+        int rw = (int)(renderW[charDir] * renderScale);
+        int rh = (int)(RENDER_H * renderScale);
+        float margin = rw * 0.50f;
+
+        // Fog effect
+        if (fogEnabled) {
+            int fogCenterX = (int)(charX + (renderW[charDir] * renderScale) / 2);
+            int fogCenterY = (int)(charY + (RENDER_H * renderScale) / 2);
+            int fogRadius = 80;
+
+            RadialGradientPaint fog = new RadialGradientPaint(
+                fogCenterX, fogCenterY, fogRadius,
+                new float[]{ 0.0f, 0.6f, 1.0f },
+                new Color[]{
+                    new Color(0, 0, 0, 0),
+                    new Color(0, 0, 0, 150),
+                    new Color(0, 0, 0, 220)
+                }
+            );
+            g2.setPaint(fog);
+            g2.fillRect(0, 0, W, H);
+        }
+
+        // Debug: bounding box karakter & titik kaki
+        if (showDebug) {
+            // Kotak bounding box karakter
+            g2.setColor(new Color(0, 255, 255, 80));
+            g2.fillRect((int)charX, (int)charY, rw, rh);
+            g2.setColor(Color.CYAN);
+            g2.drawRect((int)charX, (int)charY, rw, rh);
+        
+            // Titik-titik kaki yang dicek collision (ini yang penting!)
+            float footY = charY + rh - 5;
+            float footXL = charX + margin;
+            float footXR = charX + rw - margin;
+            float footXC = charX + rw / 2f;
+        
+            g2.setColor(Color.YELLOW);
+            int dotSize = 6;
+            g2.fillOval((int)footXL - dotSize/2, (int)footY - dotSize/2, dotSize, dotSize);
+            g2.fillOval((int)footXR - dotSize/2, (int)footY - dotSize/2, dotSize, dotSize);
+            g2.fillOval((int)footXC - dotSize/2, (int)footY - dotSize/2, dotSize, dotSize);
+        
+            // Label posisi
+            g2.setColor(Color.YELLOW);
+            g2.setFont(new Font("Monospaced", Font.BOLD, 12));
+            g2.drawString("char: (" + (int)charX + ", " + (int)charY + ")", 10, 35);
+            g2.drawString("foot: (" + (int)footXC + ", " + (int)footY + ")", 10, 50);
         }
 
         // 3. Hint interaksi
@@ -437,23 +521,12 @@ public class ScenePanel extends JPanel {
             g2.setColor(BOX_BORDER); g2.drawRoundRect(boxX, nameBoxY, nameW, 22, 6, 6);
             g2.setColor(NAME_COLOR); g2.drawString(characterName, boxX + 10, nameBoxY + 15);
         }
-        
-        if (showDebug && collisionEnabled) {
-        g2.setColor(new Color(255, 0, 0, 80));
-        for (Rectangle r : collisionRects) {
-        g2.fillRect(r.x, r.y, r.width, r.height);
-        }
-        g2.setColor(new Color(255, 0, 0, 180));
-        for (Rectangle r : collisionRects) {
-        g2.drawRect(r.x, r.y, r.width, r.height);
-            }
-        }
-        
+
         if (showDebug) {
             g2.setColor(Color.YELLOW);
             g2.setFont(new Font("Monospaced", Font.BOLD, 13));
             g2.drawString("X: " + debugX + "  Y: " + debugY, 10, 20);
-            }
+        }
 
         g2.setFont(TEXT_FONT);
         g2.setColor(TEXT_COLOR);
@@ -466,4 +539,4 @@ public class ScenePanel extends JPanel {
             textY += fm.getHeight() + 2;
         }
     }
-}   
+}
