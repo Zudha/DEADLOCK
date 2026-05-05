@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ArrayList;
 import java.awt.Rectangle;
 
 
@@ -68,9 +67,6 @@ public class ScenePanel extends JPanel {
     private static final int INTERACT_RADIUS = 40;
     private String interactHint = "[ E ] Interaksi";
     
-    //debug untuk melihat kordinat
-    private int debugX = 0, debugY = 0;
-    private boolean showDebug = false;
     private boolean collisionEnabled = false;
 
     // ── Input & Loop ────────────────────────────────────────────
@@ -85,16 +81,6 @@ public class ScenePanel extends JPanel {
         setupKeys();
         startLoop();
         
-        //kode untuk melihat kordinat
-        addMouseListener(new java.awt.event.MouseAdapter() {
-    @Override
-    public void mouseClicked(java.awt.event.MouseEvent e) {
-        debugX = e.getX();
-        debugY = e.getY();
-        repaint();
-        System.out.println("Klik: X=" + debugX + " Y=" + debugY);
-        }
-        });
     }
 
     // ── API ─────────────────────────────────────────────────────
@@ -203,20 +189,6 @@ public class ScenePanel extends JPanel {
     }
 
 
-    private BufferedImage[] flipHoriz(BufferedImage[] src) {
-        if (src == null) return new BufferedImage[0];
-        BufferedImage[] dst = new BufferedImage[src.length];
-        for (int i = 0; i < src.length; i++) {
-            BufferedImage s = src[i];
-            BufferedImage d = new BufferedImage(s.getWidth(), s.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = d.createGraphics();
-            g.drawImage(s, s.getWidth(), 0, -s.getWidth(), s.getHeight(), null);
-            g.dispose();
-            dst[i] = d;
-        }
-        return dst;
-    }
-
     private BufferedImage makeBlackTransparent(BufferedImage src, int threshold) {
         BufferedImage out = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < src.getHeight(); y++)
@@ -230,12 +202,8 @@ public class ScenePanel extends JPanel {
 
     public void setCollisionRects(List<Rectangle> rects) {
         this.collisionRects = rects;
-        System.out.println("CollisionRects set: " + rects.size() + " rects");
     }
 
-    public void clearCollisionRects() {
-        this.collisionRects.clear();
-    }
 
     // ── Key bindings ────────────────────────────────────────────
     private void setupKeys() {
@@ -253,15 +221,6 @@ public class ScenePanel extends JPanel {
         am.put("EP", new AbstractAction() {
             public void actionPerformed(ActionEvent e) { tryInteract(); }
         });
-        
-        // Di setupKeys(), tambah toggle collision dengan tombol F1
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, false), "TOGGLE_COL");
-        am.put("TOGGLE_COL", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                collisionEnabled = !collisionEnabled;
-                System.out.println("Collision: " + collisionEnabled);
-            }
-        }); 
     }
     
     public void clearOnDialogShown() {
@@ -299,7 +258,6 @@ public class ScenePanel extends JPanel {
         gameLoop.start();
     }
 
-    public void activateCharacter()   { gameLoop.start(); }
     public void deactivateCharacter() { gameLoop.stop(); keyW = keyA = keyS = keyD = false; }
 
     private void update() {
@@ -362,7 +320,6 @@ public class ScenePanel extends JPanel {
         try {
             var s = getClass().getResourceAsStream(path);
             if (s != null) background = ImageIO.read(s);
-            else System.out.println("[ScenePanel] BG tidak ditemukan: " + path);
         } catch (IOException e) { System.out.println("[ScenePanel] BG error: " + e.getMessage()); }
         repaint();
     }
@@ -389,7 +346,6 @@ public class ScenePanel extends JPanel {
     
     public void enableCollision(boolean enabled) {
         this.collisionEnabled = enabled;
-        System.out.println("Collision enabled: " + enabled);
     }
     
     private boolean isWall(float x, float y) {
@@ -425,67 +381,26 @@ public class ScenePanel extends JPanel {
             g2.drawImage(frame, (int) charX, (int) charY, rw, rh, this);
         }
 
-        // Debug: collision rect overlay
-        if (showDebug && collisionEnabled) {
-            g2.setColor(new Color(255, 0, 0, 80));
-            for (Rectangle r : collisionRects) {
-                g2.fillRect(r.x, r.y, r.width, r.height);
-            }
-            g2.setColor(new Color(255, 0, 0, 180));
-            for (Rectangle r : collisionRects) {
-                g2.drawRect(r.x, r.y, r.width, r.height);
-            }
-        }
-
-        // rw, rh, margin dideklarasi di luar if(showDebug) agar bisa dipakai di bawah
         int rw = (int)(renderW[charDir] * renderScale);
         int rh = (int)(RENDER_H * renderScale);
-        float margin = rw * 0.50f;
 
         // Fog effect
         if (fogEnabled) {
             int fogCenterX = (int)(charX + (renderW[charDir] * renderScale) / 2);
             int fogCenterY = (int)(charY + (RENDER_H * renderScale) / 2);
-            int fogRadius = 80;
+            int fogRadius = 50;
 
             RadialGradientPaint fog = new RadialGradientPaint(
                 fogCenterX, fogCenterY, fogRadius,
                 new float[]{ 0.0f, 0.6f, 1.0f },
                 new Color[]{
                     new Color(0, 0, 0, 0),
-                    new Color(0, 0, 0, 150),
-                    new Color(0, 0, 0, 220)
+                    new Color(0, 0, 0, 200),
+                    new Color(0, 0, 0, 255)
                 }
             );
             g2.setPaint(fog);
             g2.fillRect(0, 0, W, H);
-        }
-
-        // Debug: bounding box karakter & titik kaki
-        if (showDebug) {
-            // Kotak bounding box karakter
-            g2.setColor(new Color(0, 255, 255, 80));
-            g2.fillRect((int)charX, (int)charY, rw, rh);
-            g2.setColor(Color.CYAN);
-            g2.drawRect((int)charX, (int)charY, rw, rh);
-        
-            // Titik-titik kaki yang dicek collision (ini yang penting!)
-            float footY = charY + rh - 5;
-            float footXL = charX + margin;
-            float footXR = charX + rw - margin;
-            float footXC = charX + rw / 2f;
-        
-            g2.setColor(Color.YELLOW);
-            int dotSize = 6;
-            g2.fillOval((int)footXL - dotSize/2, (int)footY - dotSize/2, dotSize, dotSize);
-            g2.fillOval((int)footXR - dotSize/2, (int)footY - dotSize/2, dotSize, dotSize);
-            g2.fillOval((int)footXC - dotSize/2, (int)footY - dotSize/2, dotSize, dotSize);
-        
-            // Label posisi
-            g2.setColor(Color.YELLOW);
-            g2.setFont(new Font("Monospaced", Font.BOLD, 12));
-            g2.drawString("char: (" + (int)charX + ", " + (int)charY + ")", 10, 35);
-            g2.drawString("foot: (" + (int)footXC + ", " + (int)footY + ")", 10, 50);
         }
 
         // 3. Hint interaksi
@@ -520,12 +435,6 @@ public class ScenePanel extends JPanel {
             g2.setColor(BOX_BG);     g2.fillRoundRect(boxX, nameBoxY, nameW, 22, 6, 6);
             g2.setColor(BOX_BORDER); g2.drawRoundRect(boxX, nameBoxY, nameW, 22, 6, 6);
             g2.setColor(NAME_COLOR); g2.drawString(characterName, boxX + 10, nameBoxY + 15);
-        }
-
-        if (showDebug) {
-            g2.setColor(Color.YELLOW);
-            g2.setFont(new Font("Monospaced", Font.BOLD, 13));
-            g2.drawString("X: " + debugX + "  Y: " + debugY, 10, 20);
         }
 
         g2.setFont(TEXT_FONT);

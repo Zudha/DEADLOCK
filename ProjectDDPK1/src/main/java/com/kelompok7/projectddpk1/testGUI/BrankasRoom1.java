@@ -25,7 +25,7 @@ public class BrankasRoom1 extends JPanel {
         btn26.addActionListener(e -> parent.gameOver());
         btn67.addActionListener(e -> {
             System.out.println("Kode 67 Benar!");
-            parent.roomMazeIntro();
+            parent.room4();
         });
 
         add(btn13);
