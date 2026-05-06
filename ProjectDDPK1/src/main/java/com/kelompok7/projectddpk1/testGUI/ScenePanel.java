@@ -80,6 +80,12 @@ public class ScenePanel extends JPanel {
         loadSprite();
         setupKeys();
         startLoop();
+        addMouseMotionListener(new MouseMotionAdapter() {
+        @Override
+        public void mouseMoved(MouseEvent e) {
+            System.out.println("x=" + e.getX() + ", y=" + e.getY());
+        }
+    });
         
     }
 
