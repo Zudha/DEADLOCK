@@ -18,6 +18,9 @@ public class EscapeRoomGUI extends JFrame {
     ScenePanel scenePanel;
     int state = 0;
     boolean BacaKoran = false;
+    private static final int GAME_W = 700; 
+    private static final int GAME_H = 560;
+    
 
     // ── STATE MACHINE (tambahan untuk puzzle baru) ───────────────
     // state 0  = intro
@@ -47,6 +50,7 @@ public class EscapeRoomGUI extends JFrame {
         setTitle("COMDEV: Commit of Development");
         setSize(700, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setResizable(false);
         setLayout(new BorderLayout());
 
@@ -64,8 +68,47 @@ public class EscapeRoomGUI extends JFrame {
         input.setForeground(Color.WHITE);
         input.setCaretColor(Color.WHITE);
         input.setFont(new Font("Consolas", Font.BOLD, 16));
+        
 
-        centerPanel = new JPanel(new BorderLayout());
+        centerPanel = new JPanel(new BorderLayout()) {
+        @Override
+        protected void paintComponent(Graphics g) {
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            super.paintComponent(g);
+        }
+
+        @Override
+        public void doLayout() {
+            int W = getWidth(), H = getHeight();
+            double scale = Math.min((double) W / GAME_W, (double) H / GAME_H);
+            int scaledW = (int)(GAME_W * scale);
+            int scaledH = (int)(GAME_H * scale);
+            int offsetX = (W - scaledW) / 2;
+            int offsetY = (H - scaledH) / 2;
+            for (Component c : getComponents()) {
+                c.setBounds(offsetX, offsetY, scaledW, scaledH);
+                if (c instanceof ScenePanel sp) {
+                    sp.setLayoutScale(scale);
+                }
+            }
+        }
+    };  // ← tutup anonymous class di sini
+    centerPanel.setBackground(Color.BLACK);
+    centerPanel.add(new JScrollPane(display), BorderLayout.CENTER);
+
+    add(centerPanel, BorderLayout.CENTER);
+    add(input, BorderLayout.SOUTH);
+
+    lamp = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.setColor(getBackground());
+            g.fillOval(10, 10, 100, 100);
+        }
+    };
+    centerPanel.setBackground(Color.BLACK);
         centerPanel.add(new JScrollPane(display), BorderLayout.CENTER);
 
         add(centerPanel, BorderLayout.CENTER);
@@ -90,18 +133,11 @@ public class EscapeRoomGUI extends JFrame {
             handleInput(userInput);
         });
 
-        CutscenePanel cutscene = new CutscenePanel(this);
-        centerPanel.removeAll();
-        centerPanel.add(cutscene, BorderLayout.CENTER);
-        centerPanel.revalidate();
-        centerPanel.repaint();
-
         setLocationRelativeTo(null);
         setVisible(true);
         SwingUtilities.invokeLater(() -> {
-            input.requestFocusInWindow();
             input.setEnabled(false);
-            cutscene.play();
+            showMainMenu();
         });
     }
 
@@ -209,28 +245,36 @@ public class EscapeRoomGUI extends JFrame {
     }
 
     // ================================================================
+    // MAIN MENU (image-based with click listener)
+    // ================================================================
+
+    void showMainMenu() {
+        input.setEnabled(false);
+        MainMenuPanel menu = new MainMenuPanel(this);
+        centerPanel.removeAll();
+        centerPanel.add(menu, BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
+    }
+
+    // Called from MainMenuPanel when START is clicked
+    void startGame() {
+        CutscenePanel cutscene = new CutscenePanel(this);
+        centerPanel.removeAll();
+        centerPanel.add(cutscene, BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
+        cutscene.play();
+    }
+
+    // ================================================================
     // INTRO
     // ================================================================
 
     void intro() {
-        showTextMode();
-        clear();
-        print("=== COMDEV: Commit of Development ===");
-        print("Siang yang biasa. Lapangan ramai, tawa anak-anak memenuhi udara.");
-        print("Raka berjalan menjauh dari kelompoknya...");
-        print("Matanya tertangkap sebuah mobil gelap di pinggir jalan.");
-        print("Di balik kaca — jajanan kesukaannya tersusun rapi,");
-        print("seperti sengaja dipajang.");
-        print("");
-        print("Dia mendekat. Pintu terbuka sendiri.");
-        print("...");
-        print("Klik. Terkunci.");
-        print("Gas menyebar. Mata Raka berat.");
-        print("Gelap.");
-        print("");
-        print("(Tekan Enter untuk melanjutkan...)");
-        input.setEnabled(true);
-        input.requestFocusInWindow();
+        // After cutscene ends, go directly to room1
+        state = 1;
+        room1();
     }
 
     // ================================================================
@@ -256,13 +300,12 @@ public class EscapeRoomGUI extends JFrame {
         scenePanel.enableCollision(true);
         List<Rectangle> walls = new ArrayList<>();
         scenePanel.setCollisionRects(walls);
-        walls.add(new Rectangle(324, 355, 49, 48));
-        walls.add(new Rectangle(448, 334, 57, 98));
-        walls.add(new Rectangle(200, 332, 55, 110));
-        walls.add(new Rectangle(12, 376, 78, 146));
-        walls.add(new Rectangle(12, 80, 102, 131));
-        walls.add(new Rectangle(617, 93, 59, 56));
-        walls.add(new Rectangle(4, 6, 672, 64));
+        walls.add(new Rectangle(9, 386, 94, 166));
+        walls.add(new Rectangle(201, 349, 56, 107));
+        walls.add(new Rectangle(334, 368, 52, 58));
+        walls.add(new Rectangle(460, 358, 55, 83));
+        walls.add(new Rectangle(8, 86, 101, 132));
+        walls.add(new Rectangle(5, 16, 694, 70));
 
         // Setelah dialog → tampilkan gambar koran zoom
         scenePanel.setOnDialogShown(() -> {
@@ -308,13 +351,12 @@ public class EscapeRoomGUI extends JFrame {
         scenePanel.enableCollision(true);
         List<Rectangle> walls = new ArrayList<>();
         scenePanel.setCollisionRects(walls);
-        walls.add(new Rectangle(324, 355, 49, 48));
-        walls.add(new Rectangle(448, 334, 57, 98));
-        walls.add(new Rectangle(200, 332, 55, 110));
-        walls.add(new Rectangle(12, 376, 78, 146));
-        walls.add(new Rectangle(12, 80, 102, 131));
-        walls.add(new Rectangle(617, 93, 59, 56));
-        walls.add(new Rectangle(4, 6, 672, 64));
+        walls.add(new Rectangle(9, 386, 94, 166));
+        walls.add(new Rectangle(201, 349, 56, 107));
+        walls.add(new Rectangle(334, 368, 52, 58));
+        walls.add(new Rectangle(460, 358, 55, 83));
+        walls.add(new Rectangle(8, 86, 101, 132));
+        walls.add(new Rectangle(5, 16, 694, 70));
 
         // Setelah dialog laptop → buka LaptopLockPanel
         scenePanel.setOnDialogShown(() -> {
@@ -475,7 +517,16 @@ public class EscapeRoomGUI extends JFrame {
             "Ingat urutannya dengan baik!"
         );
 
-        scenePanel.enableCollision(false);
+        scenePanel.enableCollision(true);
+        List<Rectangle> walls = new ArrayList<>();
+        scenePanel.setCollisionRects(walls);
+        walls.add(new Rectangle(15, 236, 47, 75));
+        walls.add(new Rectangle(3, 0, 697, 148));
+        walls.add(new Rectangle(225, 412, 20, 21));
+        walls.add(new Rectangle(478, 415, 17, 17));
+        walls.add(new Rectangle(245, 272, 21, 15));
+        walls.add(new Rectangle(461, 271, 20, 13));
+        walls.add(new Rectangle(338, 388, 41, 23));
 
         scenePanel.setOnDialogShown(() -> {
             Timer t = new Timer(1500, e -> showMemoriPuzzle());
@@ -491,42 +542,82 @@ public class EscapeRoomGUI extends JFrame {
         input.setEnabled(false);
         clear();
 
-        // Buat JTextArea khusus untuk tablet screen
+        // === Panel tablet yang menampilkan kode LALU input langsung di tablet ===
+        JPanel tabletScreen = new JPanel(new BorderLayout());
+        tabletScreen.setBackground(Color.BLACK);
+
+        // Area teks atas (tampilkan kode)
         JTextArea tabletDisplay = new JTextArea();
         tabletDisplay.setEditable(false);
         tabletDisplay.setBackground(Color.BLACK);
         tabletDisplay.setForeground(new Color(50, 255, 50));
-        tabletDisplay.setFont(new Font("Monospaced", Font.PLAIN, 11));
-        tabletDisplay.setMargin(new Insets(5, 5, 5, 5));
+        tabletDisplay.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        tabletDisplay.setMargin(new Insets(8, 10, 8, 10));
         tabletDisplay.setLineWrap(true);
         tabletDisplay.setWrapStyleWord(true);
-        tabletDisplay.append("Layar tablet menyala...\n");
-        tabletDisplay.append("Simpan angka ini!\n");
+        tabletDisplay.append("[ TABLET ] Layar menyala...\n");
+        tabletDisplay.append("Hafalkan kode berikut!\n");
 
-        JPanel tabletScreen = new JPanel(new BorderLayout());
-        tabletScreen.setBackground(Color.BLACK);
+        // Area input bawah (di dalam tablet)
+        JPanel inputArea = new JPanel(new BorderLayout());
+        inputArea.setBackground(new Color(10, 10, 30));
+        inputArea.setBorder(javax.swing.BorderFactory.createLineBorder(new Color(50, 255, 50), 1));
+
+        JLabel inputLabel = new JLabel("Masukkan kode: ", JLabel.RIGHT);
+        inputLabel.setForeground(new Color(50, 255, 50));
+        inputLabel.setFont(new Font("Monospaced", Font.BOLD, 12));
+
+        JTextField tabletInput = new JTextField();
+        tabletInput.setBackground(new Color(5, 5, 20));
+        tabletInput.setForeground(Color.WHITE);
+        tabletInput.setCaretColor(Color.WHITE);
+        tabletInput.setFont(new Font("Monospaced", Font.BOLD, 13));
+        tabletInput.setEnabled(false); // aktif setelah kode disembunyikan
+
+        inputArea.add(inputLabel, BorderLayout.WEST);
+        inputArea.add(tabletInput, BorderLayout.CENTER);
+
         tabletScreen.add(new JScrollPane(tabletDisplay), BorderLayout.CENTER);
+        tabletScreen.add(inputArea, BorderLayout.SOUTH);
 
-        TabletPanel tablet = new TabletPanel(tabletScreen);
+        TabletPanel tablet = new TabletPanel(tabletScreen, TabletPanel.Mode.FULLSCREEN_PUZZLE);
         centerPanel.removeAll();
         centerPanel.add(tablet, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
 
         String kode = "8821";
+
+        // Tampilkan kode setelah 800ms
         Timer showKode = new Timer(800, e -> {
-            tabletDisplay.append("\nINGAT KODE: " + kode + "\n");
+            tabletDisplay.append("\n>>> KODE: " + kode + " <<<\n");
+            tabletDisplay.append("(Kode akan disembunyikan...)\n");
         });
         showKode.setRepeats(false);
         showKode.start();
 
+        // Sembunyikan kode, aktifkan input di tablet setelah 2800ms
         Timer hideKode = new Timer(2800, e -> {
-            // Kembalikan ke mode text biasa untuk input
-            showTextMode();
-            clear();
-            print("Masukkan kembali kode yang tadi muncul:");
+            tabletDisplay.setText("");
+            tabletDisplay.append("[ TABLET ] Kode telah disembunyikan.\n");
+            tabletDisplay.append("Masukkan kode yang tadi kamu lihat:\n");
+            tabletInput.setEnabled(true);
+            SwingUtilities.invokeLater(() -> tabletInput.requestFocusInWindow());
             state = 6;
-            input.setEnabled(true);
+
+            tabletInput.addActionListener(ev -> {
+                String val = tabletInput.getText().trim();
+                tabletInput.setText("");
+                if (val.equals("8821")) {
+                    tabletDisplay.append("\n✓ KODE BENAR!\n");
+                    tabletInput.setEnabled(false);
+                    Timer next = new Timer(800, ex -> { state = 7; room5(); });
+                    next.setRepeats(false);
+                    next.start();
+                } else {
+                    tabletDisplay.append("✗ Salah! Coba lagi.\n");
+                }
+            });
         });
         hideKode.setRepeats(false);
         hideKode.start();
@@ -693,7 +784,7 @@ public class EscapeRoomGUI extends JFrame {
         input.setEnabled(false);
         centerPanel.removeAll();
         BallSortPanel ballSort = new BallSortPanel(this);
-        TabletPanel tablet = new TabletPanel(ballSort);
+        TabletPanel tablet = new TabletPanel(ballSort, TabletPanel.Mode.FULLSCREEN_PUZZLE);
         centerPanel.add(tablet, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
@@ -739,7 +830,7 @@ public class EscapeRoomGUI extends JFrame {
         input.setEnabled(false);
         centerPanel.removeAll();
         SlidingPuzzlePanel sliding = new SlidingPuzzlePanel(this);
-        TabletPanel tablet = new TabletPanel(sliding);
+        TabletPanel tablet = new TabletPanel(sliding, TabletPanel.Mode.FULLSCREEN_PUZZLE);
         centerPanel.add(tablet, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
@@ -786,7 +877,7 @@ public class EscapeRoomGUI extends JFrame {
             centerPanel.repaint();
             input.setEnabled(false);
             scenePanel.requestFocusInWindow();
-            scenePanel.enableFog(true);
+            scenePanel.enableFog(false);
             scenePanel.setBackground("/asset/bg/maze.png");
             scenePanel.setCharPos(62, 83);
             scenePanel.setRenderScale(0.5f);
@@ -794,56 +885,55 @@ public class EscapeRoomGUI extends JFrame {
 
             List<Rectangle> walls = new ArrayList<>();
             scenePanel.setCollisionRects(walls);
-            walls.add(new Rectangle(0, 3, 51, 299));
-            walls.add(new Rectangle(96, 74, 41, 81));
-            walls.add(new Rectangle(135, 139, 84, 17));
-            walls.add(new Rectangle(177, 154, 42, 66));
-            walls.add(new Rectangle(221, 208, 170, 16));
-            walls.add(new Rectangle(348, 224, 41, 68));
-            walls.add(new Rectangle(51, 213, 87, 13));
-            walls.add(new Rectangle(182, 352, 38, 79));
-            walls.add(new Rectangle(133, 286, 133, 10));
-            walls.add(new Rectangle(263, 287, 38, 79));
-            walls.add(new Rectangle(301, 353, 132, 12));
-            walls.add(new Rectangle(433, 353, 36, 77));
-            walls.add(new Rectangle(159, 492, 81, 35));
-            walls.add(new Rectangle(239, 488, 26, 11));
-            walls.add(new Rectangle(331, 501, 16, 28));
-            walls.add(new Rectangle(455, 498, 31, 30));
-            walls.add(new Rectangle(534, 488, 25, 42));
-            walls.add(new Rectangle(625, 446, 52, 6));
-            walls.add(new Rectangle(434, 280, 77, 14));
-            walls.add(new Rectangle(431, 142, 39, 140));
-            walls.add(new Rectangle(466, 212, 92, 11));
-            walls.add(new Rectangle(591, 282, 47, 13));
-            walls.add(new Rectangle(513, 71, 42, 85));
-            walls.add(new Rectangle(553, 117, 17, 35));
-            walls.add(new Rectangle(611, 117, 62, 36));
-            walls.add(new Rectangle(618, 15, 52, 104));
-            walls.add(new Rectangle(430, 8, 39, 78));
-            walls.add(new Rectangle(470, 4, 148, 12));
-            walls.add(new Rectangle(49, 5, 424, 15));
-            walls.add(new Rectangle(177, 14, 40, 68));
-            walls.add(new Rectangle(260, 71, 41, 87));
-            walls.add(new Rectangle(304, 72, 42, 14));
-            walls.add(new Rectangle(346, 73, 39, 82));
-            walls.add(new Rectangle(385, 142, 50, 10));
-            walls.add(new Rectangle(58, 488, 35, 39));
-            walls.add(new Rectangle(94, 489, 23, 8));
-            walls.add(new Rectangle(510, 282, 49, 82));
-            walls.add(new Rectangle(595, 429, 24, 56));
-            walls.add(new Rectangle(620, 448, 10, 35));
-            walls.add(new Rectangle(596, 354, 40, 9));
-            walls.add(new Rectangle(597, 215, 72, 6));
-            walls.add(new Rectangle(101, 287, 32, 73));
-            walls.add(new Rectangle(470, 424, 82, 6));
-            walls.add(new Rectangle(40, 357, 12, 118));
-            walls.add(new Rectangle(56, 424, 124, 6));
-            walls.add(new Rectangle(263, 427, 7, 71));
-            walls.add(new Rectangle(386, 486, 104, 4));
-            walls.add(new Rectangle(305, 425, 78, 4));
-            walls.add(new Rectangle(302, 490, 45, 7));
-            walls.add(new Rectangle(300, 436, 6, 50));
+            walls.add(new Rectangle(399, 516, 74, 3));
+            walls.add(new Rectangle(614, 452, 22, 54));
+            walls.add(new Rectangle(2, 2, 51, 313));
+            walls.add(new Rectangle(56, 226, 80, 5));
+            walls.add(new Rectangle(44, 378, 6, 137));
+            walls.add(new Rectangle(50, 445, 139, 5));
+            walls.add(new Rectangle(191, 374, 35, 78));
+            walls.add(new Rectangle(106, 302, 31, 76));
+            walls.add(new Rectangle(138, 301, 135, 6));
+            walls.add(new Rectangle(275, 302, 32, 75));
+            walls.add(new Rectangle(308, 374, 141, 4));
+            walls.add(new Rectangle(449, 374, 32, 79));
+            walls.add(new Rectangle(481, 447, 90, 4));
+            walls.add(new Rectangle(172, 518, 71, 39));
+            walls.add(new Rectangle(245, 516, 34, 5));
+            walls.add(new Rectangle(271, 443, 4, 73));
+            walls.add(new Rectangle(310, 444, 3, 73));
+            walls.add(new Rectangle(310, 516, 49, 5));
+            walls.add(new Rectangle(344, 522, 11, 34));
+            walls.add(new Rectangle(314, 448, 84, 4));
+            walls.add(new Rectangle(470, 518, 31, 38));
+            walls.add(new Rectangle(554, 516, 18, 39));
+            walls.add(new Rectangle(530, 302, 41, 77));
+            walls.add(new Rectangle(447, 300, 79, 5));
+            walls.add(new Rectangle(443, 150, 38, 148));
+            walls.add(new Rectangle(481, 224, 94, 8));
+            walls.add(new Rectangle(615, 226, 73, 6));
+            walls.add(new Rectangle(614, 299, 44, 7));
+            walls.add(new Rectangle(0, 316, 4, 244));
+            walls.add(new Rectangle(614, 372, 44, 9));
+            walls.add(new Rectangle(46, 4, 654, 25));
+            walls.add(new Rectangle(101, 80, 36, 77));
+            walls.add(new Rectangle(137, 150, 50, 7));
+            walls.add(new Rectangle(185, 153, 38, 79));
+            walls.add(new Rectangle(225, 224, 135, 8));
+            walls.add(new Rectangle(358, 225, 35, 80));
+            walls.add(new Rectangle(273, 81, 35, 80));
+            walls.add(new Rectangle(357, 84, 39, 71));
+            walls.add(new Rectangle(182, 29, 42, 62));
+            walls.add(new Rectangle(451, 30, 29, 58));
+            walls.add(new Rectangle(525, 84, 37, 73));
+            walls.add(new Rectangle(571, 124, 12, 32));
+            walls.add(new Rectangle(564, 81, 10, 39));
+            walls.add(new Rectangle(637, 34, 55, 121));
+            walls.add(new Rectangle(629, 121, 5, 36));
+            walls.add(new Rectangle(638, 468, 62, 6));
+            walls.add(new Rectangle(396, 151, 46, 6));
+            walls.add(new Rectangle(53, 516, 73, 3));
+walls.add(new Rectangle(312, 82, 44, 6));
 
             scenePanel.setDeskPosition(657, 484, 60, 60);
             scenePanel.setInteractHint("[ E ] Kabur!");
@@ -879,20 +969,22 @@ public class EscapeRoomGUI extends JFrame {
     }
 
     void gameOver() {
-        showSceneMode();
-        scenePanel.setBackground("");
-        scenePanel.setDialog("SISTEM",
-            "--- SYSTEM CRASH ---",
-            "Kamu gagal melakukan commit.",
-            "Brain Memory leak berlebihan.",
-            "",
-            "GAME OVER",
-            "",
-            "Apakah kamu ingin mengulang? (Y/T)"
-        );
         state = 99;
-        input.setEnabled(true);
-        input.requestFocusInWindow();
+        input.setEnabled(false);
+        GameOverPanel goPanel = new GameOverPanel(this);
+        centerPanel.removeAll();
+        centerPanel.add(goPanel, BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
+    }
+
+    // Called from GameOverPanel Play Again button
+    void restartGame() {
+        state = 0;
+        scenePanel.resetCharPos();
+        scenePanel.clearInteractDialog();
+        BacaKoran = false;
+        showMainMenu();
     }
 
     // ================================================================
@@ -920,18 +1012,8 @@ public class EscapeRoomGUI extends JFrame {
             if (room.equals("/pintu"))   { showPintu();               return; }
         }
 
-        // ── Game Over restart ──
-        if (state == 99) {
-            if (inputUser.trim().equalsIgnoreCase("Y")) {
-                state = 1;
-                scenePanel.resetCharPos();
-                scenePanel.clearInteractDialog();
-                room1();
-            } else {
-                System.exit(0);
-            }
-            return;
-        }
+        // ── Game Over — ditangani GameOverPanel, bukan text input ──
+        if (state == 99) return;
 
         // ── State machine (room 2 dst.) ──
         switch (state) {
@@ -949,11 +1031,8 @@ public class EscapeRoomGUI extends JFrame {
             // Room 3 → lanjut ke room4 (memori)
             case 3 -> { state = 4; room4(); }
 
-            // Room 4: input memori
-            case 6 -> {
-                if (inputUser.equals("8821")) { state = 7; room5(); }
-                else gameOver();
-            }
+            // Room 4: input memori ditangani langsung di TabletPanel (state 6)
+            // case 6 — handled inside showMemoriPuzzle tablet input
 
             // Room 5: input morse
             case 7 -> {

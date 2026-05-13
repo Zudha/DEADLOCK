@@ -65,10 +65,12 @@ public class ScenePanel extends JPanel {
     private static final int FRAME_DELAY = 10;
     private static final int MOVE_SPEED  = 3;
     private float renderScale = 1.0f; // default normal
+    private double layoutScale = 1.0;
+    public void setLayoutScale(double scale) { this.layoutScale = scale; }
 
     // ── Zona interaksi ──────────────────────────────────────────
     private int deskX = 150, deskY = 150, deskW = 80, deskH = 80;
-    private static final int INTERACT_RADIUS = 80;
+    private static final int INTERACT_RADIUS = 60;
     private String interactHint = "[ E ] Interaksi";
     
     private boolean collisionEnabled = false;
@@ -286,13 +288,12 @@ public class ScenePanel extends JPanel {
 
         int rw = renderW[charDir];
         int scaledRW = (int)(rw * renderScale);
-        int maxX = getWidth() - scaledRW;
         int rh = (int)(RENDER_H * renderScale);
-        int maxY = (lines.isEmpty() ? getHeight() : getHeight() - BOX_HEIGHT - 40) - rh;
+
+        int maxX = 700 - scaledRW;
+        int maxY = (lines.isEmpty() ? 560 : 560 - BOX_HEIGHT - 40) - rh;
         nx = Math.max(0, Math.min(nx, maxX));
         ny = Math.max(0, Math.min(ny, maxY));
-
-        
         
         
         Rectangle nextBounds = new Rectangle((int)nx, (int)ny, scaledRW, rh);
@@ -362,6 +363,7 @@ public class ScenePanel extends JPanel {
         this.collisionEnabled = enabled;
     }
     
+    
     private boolean isWall(float x, float y) {
         if (!collisionEnabled) return false;
         for (Rectangle r : collisionRects) {
@@ -372,64 +374,63 @@ public class ScenePanel extends JPanel {
 
     // ── Render ──────────────────────────────────────────────────
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,     RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+protected void paintComponent(Graphics g) {
+    super.paintComponent(g);
+    Graphics2D g2 = (Graphics2D) g;
+    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,      RenderingHints.VALUE_ANTIALIAS_ON);
+    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,     RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
-        int W = getWidth(), H = getHeight();
+    // Apply scale — semua koordinat tetap 700x560
+    g2.scale(layoutScale, layoutScale);
 
-        // 1. Background
-        if (background != null) g2.drawImage(background, 0, 0, W, H, this);
-        else { g2.setColor(Color.BLACK); g2.fillRect(0, 0, W, H); }
+    int W = 700, H = 560; // selalu gunakan resolusi asli
 
-        // 2. Karakter
-        if (mcFrames != null && mcFrames[charDir] != null
-                && charFrame < mcFrames[charDir].length
-                && mcFrames[charDir][charFrame] != null) {
-            BufferedImage frame = mcFrames[charDir][charFrame];
-            int rw = (int)(renderW[charDir] * renderScale);
-            int rh = (int)(RENDER_H * renderScale);
-            g2.drawImage(frame, (int) charX, (int) charY, rw, rh, this);
-        }
+    // 1. Background
+    if (background != null) g2.drawImage(background, 0, 0, W, H, this);
+    else { g2.setColor(Color.BLACK); g2.fillRect(0, 0, W, H); }
 
+    // 2. Karakter
+    if (mcFrames != null && mcFrames[charDir] != null
+            && charFrame < mcFrames[charDir].length
+            && mcFrames[charDir][charFrame] != null) {
+        BufferedImage frame = mcFrames[charDir][charFrame];
         int rw = (int)(renderW[charDir] * renderScale);
         int rh = (int)(RENDER_H * renderScale);
+        g2.drawImage(frame, (int) charX, (int) charY, rw, rh, this);
+    }
 
-        // Fog effect
-        if (fogEnabled) {
-            int fogCenterX = (int)(charX + (renderW[charDir] * renderScale) / 2);
-            int fogCenterY = (int)(charY + (RENDER_H * renderScale) / 2);
-            int fogRadius = 50;
+    // Fog effect
+    if (fogEnabled) {
+        int fogCenterX = (int)(charX + (renderW[charDir] * renderScale) / 2);
+        int fogCenterY = (int)(charY + (RENDER_H * renderScale) / 2);
+        int fogRadius = 50;
+        RadialGradientPaint fog = new RadialGradientPaint(
+            fogCenterX, fogCenterY, fogRadius,
+            new float[]{ 0.0f, 0.6f, 1.0f },
+            new Color[]{
+                new Color(0, 0, 0, 0),
+                new Color(0, 0, 0, 200),
+                new Color(0, 0, 0, 255)
+            }
+        );
+        g2.setPaint(fog);
+        g2.fillRect(0, 0, W, H);
+    }
 
-            RadialGradientPaint fog = new RadialGradientPaint(
-                fogCenterX, fogCenterY, fogRadius,
-                new float[]{ 0.0f, 0.6f, 1.0f },
-                new Color[]{
-                    new Color(0, 0, 0, 0),
-                    new Color(0, 0, 0, 200),
-                    new Color(0, 0, 0, 255)
-                }
-            );
-            g2.setPaint(fog);
-            g2.fillRect(0, 0, W, H);
-        }
-
-        // 3. Hint interaksi
-        if (isNearDesk() && !dialogShown && pendingDialogLines.length > 0) {
-            String hint = interactHint;
-            g2.setFont(new Font("Monospaced", Font.BOLD, 13));
-            FontMetrics fm = g2.getFontMetrics();
-            int hw = fm.stringWidth(hint) + 16;
-            int hx = deskX + deskW / 2 - hw / 2;
-            int hy = deskY - 10;
-            g2.setColor(new Color(0, 0, 0, 160));
-            g2.fillRoundRect(hx, hy - fm.getAscent() - 4, hw, fm.getHeight() + 8, 8, 8);
-            g2.setColor(new Color(50, 255, 50));
-            g2.drawString(hint, hx + 8, hy);
-        }
+    // 3. Hint interaksi
+    if (isNearDesk() && !dialogShown && pendingDialogLines.length > 0) {
+        String hint = interactHint;
+        g2.setFont(new Font("Monospaced", Font.BOLD, 13));
+        FontMetrics fm = g2.getFontMetrics();
+        int hw = fm.stringWidth(hint) + 16;
+        int hx = deskX + deskW / 2 - hw / 2;
+        int hy = deskY - 10;
+        g2.setColor(new Color(0, 0, 0, 160));
+        g2.fillRoundRect(hx, hy - fm.getAscent() - 4, hw, fm.getHeight() + 8, 8, 8);
+        g2.setColor(new Color(50, 255, 50));
+        g2.drawString(hint, hx + 8, hy);
+    }
 
         // 4. Dialog box
         if (lines.isEmpty() && characterName.isEmpty()) return;
@@ -449,13 +450,6 @@ public class ScenePanel extends JPanel {
             g2.setColor(BOX_BG);     g2.fillRoundRect(boxX, nameBoxY, nameW, 22, 6, 6);
             g2.setColor(BOX_BORDER); g2.drawRoundRect(boxX, nameBoxY, nameW, 22, 6, 6);
             g2.setColor(NAME_COLOR); g2.drawString(characterName, boxX + 10, nameBoxY + 15);
-        }
-        
-        
-        if (showDebug) {
-            g2.setColor(Color.YELLOW);
-            g2.setFont(new Font("Monospaced", Font.BOLD, 13));
-            g2.drawString("X: " + debugX + "  Y: " + debugY, 10, 20);
         }
 
         g2.setFont(TEXT_FONT);

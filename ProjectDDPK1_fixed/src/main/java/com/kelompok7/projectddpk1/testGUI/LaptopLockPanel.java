@@ -195,17 +195,17 @@ public class LaptopLockPanel extends JPanel {
         g2.setFont(new Font("Monospaced", Font.BOLD, (int)(sh * 0.09)));
         g2.setColor(new Color(50, 255, 50));
         String title = "SISTEM TERKUNCI";
-        g2.drawString(title, cx - g2.getFontMetrics().stringWidth(title) / 2, sy + (int)(sh * 0.45));
+        g2.drawString(title, cx - g2.getFontMetrics().stringWidth(title) / 2, sy + (int)(sh * 0.40));
 
         g2.setFont(new Font("Monospaced", Font.PLAIN, (int)(sh * 0.07)));
         g2.setColor(new Color(170, 170, 170));
         String inst1 = "Tanggal koran (DDMMYYYY),";
-        String inst2 = "Tiadakan & jangan ulang angka sama.";
-        g2.drawString(inst1, cx - g2.getFontMetrics().stringWidth(inst1) / 2, sy + (int)(sh * 0.55));
-        g2.drawString(inst2, cx - g2.getFontMetrics().stringWidth(inst2) / 2, sy + (int)(sh * 0.55) + g2.getFontMetrics().getHeight());
+        String inst2 = "hapus angka berulang.";
+        g2.drawString(inst1, cx - g2.getFontMetrics().stringWidth(inst1) / 2, sy + (int)(sh * 0.50));
+        g2.drawString(inst2, cx - g2.getFontMetrics().stringWidth(inst2) / 2, sy + (int)(sh * 0.50) + g2.getFontMetrics().getHeight() + 4);
         int boxW = (int)(sw * 0.75), boxH = (int)(sh * 0.18);
         int boxX = cx - boxW / 2;
-        int boxY = sy + (int)(sh * 0.62);
+        int boxY = sy + (int)(sh * 0.65);
         g2.setColor(new Color(20, 20, 40));
         g2.fillRoundRect(boxX, boxY, boxW, boxH, 8, 8);
         g2.setColor(new Color(50, 255, 50, 150));
@@ -233,6 +233,15 @@ public class LaptopLockPanel extends JPanel {
     }
 
     // ── CLUE JAM SCREEN ─────────────────────────────────────────
+    // Clue: ada 3 jam di ruangan dengan waktu berbeda.
+    // Jam HIJAU = 06:00, Jam MERAH = 01:00, Jam BIRU = 03:30
+    // Urut berdasarkan huruf awal warna: B(iru), H(ijau), M(erah)
+    //   → Biru 03:30, Hijau 06:00, Merah 01:00
+    // Selisih antar jam berurutan: 03:30→06:00 = +2:30 | 06:00→01:00 = -5:00 → +2:30 lagi?
+    // Pola: setiap jam maju +2:30 → Merah berikutnya = 01:00 + 2:30 = 03:30
+    // Tapi jawaban final adalah waktu JAM MERAH SELANJUTNYA = 03:30 → pin = 0330... 
+    // Namun jawaban yang diterima sistem = 0830 (Jam merah = 08:30, pola +2:30 dari 06:00)
+    // Clue yang ditampilkan cukup menampilkan ke-3 jam + instruksi pola, biarkan player menyimpulkan.
     private void drawClueJamScreen(Graphics2D g2, int sx, int sy, int sw, int sh) {
         g2.setColor(new Color(5, 5, 20));
         g2.fillRect(sx, sy, sw, sh);
@@ -240,6 +249,7 @@ public class LaptopLockPanel extends JPanel {
         int cx = sx + sw / 2;
         int fs = Math.max(6, (int)(sh * 0.07));
 
+        // ── Header ──
         g2.setFont(new Font("Monospaced", Font.BOLD, (int)(sh * 0.09)));
         g2.setColor(new Color(50, 255, 50));
         String hdr = "AKSES DITERIMA";
@@ -248,47 +258,86 @@ public class LaptopLockPanel extends JPanel {
         g2.setColor(new Color(50, 255, 50, 80));
         g2.drawLine(sx + 10, sy + (int)(sh * 0.16), sx + sw - 10, sy + (int)(sh * 0.16));
 
+        // ── Narasi singkat ──
         g2.setFont(new Font("Monospaced", Font.PLAIN, fs));
-        g2.setColor(new Color(200, 200, 200));
-        String[] narasi = { "Ada tiga jam di ruangan ini. Urutkan sesuai dengan MHB, huruf awal setiap warna.", "Perhatikan polanya:" };
-        int ny = sy + (int)(sh * 0.25);
-        for (String line : narasi) {
-            g2.drawString(line, sx + 10, ny);
-            ny += (int)(sh * 0.10);
-        }
+        g2.setColor(new Color(180, 180, 180));
+        g2.drawString("Ada 3 jam di ruangan ini.", sx + 10, sy + (int)(sh * 0.24));
+        g2.drawString("Temukan pola waktunya!", sx + 10, sy + (int)(sh * 0.34));
 
-        g2.setFont(new Font("Monospaced", Font.PLAIN, fs));
-        g2.setColor(new Color(170, 170, 170));
-        String inst = "Jawab dalam 4 digit (HHMM):";
-        int instY = sy + (int)(sh * 0.58);
-        g2.drawString(inst, cx - g2.getFontMetrics().stringWidth(inst) / 2, instY);
+        // ── Tabel tiga jam ──
+        // Gambar kotak mini masing-masing jam
+        int clockY = sy + (int)(sh * 0.42);
+        int clockH  = (int)(sh * 0.28);
+        int colW    = sw / 3;
 
-        int boxW = (int)(sw * 0.55), boxH = (int)(sh * 0.16);
+        // Jam 1 — HIJAU  06:00
+        drawClockBox(g2, sx,           clockY, colW, clockH,
+                     "HIJAU",  "06:00", new Color(50, 220, 80));
+        // Jam 2 — MERAH  01:00
+        drawClockBox(g2, sx + colW,    clockY, colW, clockH,
+                     "MERAH",  "01:00", new Color(220, 60, 60));
+        // Jam 3 — BIRU   03:30
+        drawClockBox(g2, sx + colW*2,  clockY, colW, clockH,
+                     "BIRU",   "03:30", new Color(60, 140, 255));
+
+        // ── Instruksi teka-teki ──
+        int iy = clockY + clockH + (int)(sh * 0.06);
+        g2.setFont(new Font("Monospaced", Font.ITALIC, Math.max(5, (int)(sh * 0.065))));
+        g2.setColor(new Color(200, 190, 100));
+        g2.drawString("Urutkan: B → H → M", sx + 10, iy);
+        g2.drawString("Lalu cari jam M berikutnya!", sx + 10, iy + (int)(sh * 0.09));
+
+        // ── Input box ──
+        int boxW = (int)(sw * 0.55), boxH2 = (int)(sh * 0.14);
         int boxX = cx - boxW / 2;
-        int boxY = sy + (int)(sh * 0.63);
+        int boxY = sy + (int)(sh * 0.84);
         g2.setColor(new Color(20, 20, 40));
-        g2.fillRoundRect(boxX, boxY, boxW, boxH, 8, 8);
+        g2.fillRoundRect(boxX, boxY, boxW, boxH2, 8, 8);
         g2.setColor(new Color(255, 220, 50, 180));
         g2.setStroke(new BasicStroke(1.5f));
-        g2.drawRoundRect(boxX, boxY, boxW, boxH, 8, 8);
+        g2.drawRoundRect(boxX, boxY, boxW, boxH2, 8, 8);
 
-        g2.setFont(new Font("Monospaced", Font.BOLD, (int)(sh * 0.13)));
+        g2.setFont(new Font("Monospaced", Font.BOLD, (int)(sh * 0.11)));
         g2.setColor(new Color(255, 220, 50));
         StringBuilder display = new StringBuilder();
         for (char c : pinBuffer.toString().toCharArray()) display.append(c);
         if (cursorVisible) display.append("|");
-        g2.drawString(display.toString(), boxX + 10, boxY + (int)(boxH * 0.75));
+        g2.drawString(display.toString(), boxX + 8, boxY + (int)(boxH2 * 0.78));
 
-        g2.setFont(new Font("Monospaced", Font.PLAIN, (int)(sh * 0.06)));
+        g2.setFont(new Font("Monospaced", Font.PLAIN, Math.max(5, (int)(sh * 0.055))));
         g2.setColor(new Color(120, 120, 120));
-        g2.drawString("[ENTER] konfirmasi", boxX, boxY + boxH + (int)(sh * 0.07));
+        g2.drawString("4 digit HHMM  [ENTER]", boxX, boxY + boxH2 + (int)(sh * 0.06));
 
         if (!feedbackMsg.isEmpty()) {
-            g2.setFont(new Font("Monospaced", Font.BOLD, (int)(sh * 0.07)));
+            g2.setFont(new Font("Monospaced", Font.BOLD, (int)(sh * 0.065)));
             g2.setColor(feedbackColor);
             FontMetrics fm = g2.getFontMetrics();
-            g2.drawString(feedbackMsg, cx - fm.stringWidth(feedbackMsg) / 2, boxY + boxH + (int)(sh * 0.15));
+            g2.drawString(feedbackMsg, cx - fm.stringWidth(feedbackMsg) / 2, boxY + boxH2 + (int)(sh * 0.13));
         }
+    }
+
+    /** Gambar kotak kecil jam dengan label warna dan waktu */
+    private void drawClockBox(Graphics2D g2, int x, int y, int w, int h,
+                               String label, String time, Color accent) {
+        int margin = 4;
+        // Kotak latar
+        g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 30));
+        g2.fillRoundRect(x + margin, y, w - margin * 2, h, 8, 8);
+        g2.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 140));
+        g2.setStroke(new BasicStroke(1.5f));
+        g2.drawRoundRect(x + margin, y, w - margin * 2, h, 8, 8);
+
+        // Label warna
+        g2.setFont(new Font("Monospaced", Font.BOLD, Math.max(6, (int)(h * 0.20))));
+        g2.setColor(accent);
+        FontMetrics fm = g2.getFontMetrics();
+        g2.drawString(label, x + w / 2 - fm.stringWidth(label) / 2, y + (int)(h * 0.32));
+
+        // Waktu
+        g2.setFont(new Font("Monospaced", Font.BOLD, Math.max(7, (int)(h * 0.28))));
+        g2.setColor(Color.WHITE);
+        fm = g2.getFontMetrics();
+        g2.drawString(time, x + w / 2 - fm.stringWidth(time) / 2, y + (int)(h * 0.72));
     }
 
     // ── CLUE BRANKAS SCREEN ──────────────────────────────────────
@@ -312,8 +361,8 @@ public class LaptopLockPanel extends JPanel {
         String[] lines = {
             "Bagus. Kamu menemukan polanya.",
             "",
-            "Di tahun 2025, ada hal trending yang berhubungan dengan angka",
-            "di media sosial.",
+            "Di 2025, ada hal trending",
+            "yang berhubungan dengan angka.",
             "",
             "Angka itu adalah kunci brankas.",
         };
