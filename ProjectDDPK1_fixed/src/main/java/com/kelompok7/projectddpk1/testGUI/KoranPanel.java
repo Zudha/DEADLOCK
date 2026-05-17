@@ -15,6 +15,7 @@ public class KoranPanel extends JPanel {
 
     private BufferedImage koranImage;
     private EscapeRoomGUI parent;
+    private JButton btnClose;
 
     public KoranPanel(EscapeRoomGUI parent) {
         this.parent = parent;
@@ -22,9 +23,8 @@ public class KoranPanel extends JPanel {
         setBackground(new Color(10, 10, 10));
         loadKoranImage();
 
-        // Tombol tutup di pojok kanan atas
-        JButton btnClose = new JButton("✕  Tutup Koran");
-        btnClose.setBounds(650, 20, 140, 36);
+        // Tombol tutup — posisi dihitung proporsional di doLayout()
+        btnClose = new JButton("✕  Tutup Koran");
         btnClose.setBackground(new Color(50, 50, 50));
         btnClose.setForeground(new Color(50, 255, 50));
         btnClose.setFont(new Font("Monospaced", Font.BOLD, 13));
@@ -33,6 +33,21 @@ public class KoranPanel extends JPanel {
         btnClose.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnClose.addActionListener(e -> parent.afterKoran());
         add(btnClose);
+    }
+
+    /**
+     * Posisi tombol tutup dihitung proporsional setiap panel di-resize.
+     * Tombol diletakkan di pojok kanan atas dengan margin kecil.
+     */
+    @Override
+    public void doLayout() {
+        int W = getWidth(), H = getHeight();
+        if (W == 0 || H == 0) return;
+        int bw = (int)(W * 0.20);  // lebar ~20% panel
+        int bh = (int)(H * 0.065); // tinggi ~6.5% panel
+        int bx = W - bw - (int)(W * 0.02); // pojok kanan, margin 2%
+        int by = (int)(H * 0.035);          // dari atas, margin 3.5%
+        btnClose.setBounds(bx, by, bw, bh);
     }
 
     private void loadKoranImage() {

@@ -344,7 +344,7 @@ public class EscapeRoomGUI extends JFrame {
         centerPanel.add(new KoranPanel(this), BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
-        input.setEnabled(false);
+        input.setEnabled(true);
     }
 
     // ── Setelah koran ditutup → laptop lockscreen ────────────────
@@ -976,6 +976,7 @@ public class EscapeRoomGUI extends JFrame {
         print("");
         print("Raka tidak menunggu kalimat berikutnya. Dia berlari.");
         print("");
+        
         Timer t = new Timer(3000, e -> {
             centerPanel.removeAll();
             centerPanel.add(scenePanel, BorderLayout.CENTER);
@@ -1039,7 +1040,7 @@ public class EscapeRoomGUI extends JFrame {
             walls.add(new Rectangle(638, 468, 62, 6));
             walls.add(new Rectangle(396, 151, 46, 6));
             walls.add(new Rectangle(53, 516, 73, 3));
-walls.add(new Rectangle(312, 82, 44, 6));
+            walls.add(new Rectangle(312, 82, 44, 6));
 
             scenePanel.setDeskPosition(657, 484, 60, 60);
             scenePanel.setInteractHint("[ E ] Kabur!");
@@ -1052,6 +1053,7 @@ walls.add(new Rectangle(312, 82, 44, 6));
         });
         t.setRepeats(false);
         t.start();
+        
     }
 
     // ================================================================
@@ -1059,19 +1061,68 @@ walls.add(new Rectangle(312, 82, 44, 6));
     // ================================================================
 
     void ending() {
-        showSceneMode();
-        scenePanel.setBackground("/asset/bg/SuperMarket.jpg");
-        scenePanel.setDialog("--- KAMU BERHASIL KABUR ---",
-            "Raka berlari keluar rumah itu.",
-            "Napasnya terengah, tapi dia tidak berhenti.",
-            "Di kejauhan, jalan raya ramai terlihat.",
-            "",
-            "Penjahat hanya berdiri di pagar.",
-            "Dia tidak berani keluar.",
-            "",
-            "Raka selamat."
-        );
         input.setEnabled(false);
+        EndingPanel endingPanel = new EndingPanel(this);
+        centerPanel.removeAll();
+        centerPanel.add(endingPanel, BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
+        endingPanel.play();
+    }
+
+    /**
+     * Dipanggil oleh EndingPanel setelah GIF ending selesai.
+     * Menampilkan layar kredit dengan tombol Main Menu dan Exit.
+     */
+    void showCreditsScreen() {
+        showTextMode();
+        clear();
+        print("══════════════════════════════════════════");
+        print("              TAMAT — THE END             ");
+        print("══════════════════════════════════════════");
+        print("");
+        print("  Raka berhasil meloloskan diri.");
+        print("  Dia tidak pernah kembali ke tempat itu.");
+        print("");
+        print("══════════════════════════════════════════");
+        print("  COMDEV: Commit of Development");
+        print("  Kelompok 7 — DDP K1");
+        print("══════════════════════════════════════════");
+        print("");
+
+        // Tombol Main Menu dan Exit
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        btnPanel.setBackground(Color.BLACK);
+
+        JButton btnMenu = new JButton("⟳  Main Menu");
+        btnMenu.setBackground(new Color(30, 30, 30));
+        btnMenu.setForeground(new Color(50, 255, 50));
+        btnMenu.setFont(new Font("Monospaced", Font.BOLD, 14));
+        btnMenu.setFocusPainted(false);
+        btnMenu.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnMenu.addActionListener(e -> restartGame());
+
+        JButton btnExit = new JButton("✕  Keluar");
+        btnExit.setBackground(new Color(30, 30, 30));
+        btnExit.setForeground(new Color(255, 100, 100));
+        btnExit.setFont(new Font("Monospaced", Font.BOLD, 14));
+        btnExit.setFocusPainted(false);
+        btnExit.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnExit.addActionListener(e -> System.exit(0));
+
+        btnPanel.add(btnMenu);
+        btnPanel.add(btnExit);
+
+        // Tambahkan panel tombol ke bawah display
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBackground(Color.BLACK);
+        wrapper.add(new JScrollPane(display), BorderLayout.CENTER);
+        wrapper.add(btnPanel, BorderLayout.SOUTH);
+
+        centerPanel.removeAll();
+        centerPanel.add(wrapper, BorderLayout.CENTER);
+        centerPanel.revalidate();
+        centerPanel.repaint();
     }
 
     void gameOver() {

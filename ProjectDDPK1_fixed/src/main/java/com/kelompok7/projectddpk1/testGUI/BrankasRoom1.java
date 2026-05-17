@@ -9,6 +9,27 @@ import java.awt.image.BufferedImage;
 public class BrankasRoom1 extends JPanel {
     private BufferedImage bgBrankas;
     private EscapeRoomGUI parent;
+    private int selectedCode = 0; // kode yang dipilih pemain (13, 26, atau 67)
+
+    // ── Proporsi tombol relatif terhadap ukuran panel ─────────────────
+    // Dikalibrasi langsung dari Brankas.png (1152x921px).
+    // Ubah BTN_BORDER_PAINTED = true untuk debug jika perlu kalibrasi ulang.
+    private static final boolean BTN_BORDER_PAINTED = false;
+
+    private static final double BTN_Y   = 0.4343;
+    private static final double BTN_H   = 0.0651;
+    private static final double COL13_X = 0.4149;
+    private static final double COL26_X = 0.4861;
+    private static final double COL67_X = 0.5582;
+    private static final double BTN_W   = 0.0564;
+
+    // Tombol OK
+    private static final double OK_X = 0.4887;
+    private static final double OK_Y = 0.5190;
+    private static final double OK_W = 0.0608;
+    private static final double OK_H = 0.0489;
+
+    private JButton btn13, btn26, btn67, btnOK;
 
     public BrankasRoom1(EscapeRoomGUI controller) {
         this.parent = controller;
@@ -16,28 +37,54 @@ public class BrankasRoom1 extends JPanel {
         setOpaque(false);
         loadBrankasImage();
 
-        // Tombol Transparan (Koordinat sesuaikan dengan gambar Brankas_Zoom)
-        JButton btn13 = createInvisibleButton(378, 325, 50, 50);
-        JButton btn26 = createInvisibleButton(448, 325, 50, 50);
-        JButton btn67 = createInvisibleButton(512, 325, 50, 50);
+        btn13 = createInvisibleButton();
+        btn26 = createInvisibleButton();
+        btn67 = createInvisibleButton();
+        btnOK = createInvisibleButton();
 
         btn13.addActionListener(e -> parent.gameOver());
         btn26.addActionListener(e -> parent.gameOver());
         btn67.addActionListener(e -> {
-            System.out.println("Kode 67 Benar!");
-            showGoldenKeyNote();
+            selectedCode = 67;
+            repaint();
+        });
+        btnOK.addActionListener(e -> {
+            if (selectedCode == 67) {
+                System.out.println("Kode 67 Benar!");
+                showGoldenKeyNote();
+            } else if (selectedCode != 0) {
+                parent.gameOver();
+            }
         });
 
         add(btn13);
         add(btn26);
         add(btn67);
+        add(btnOK);
 
-        this.addComponentListener(new ComponentAdapter() {
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                repositionButtons();
+            }
             @Override
             public void componentShown(ComponentEvent e) {
                 requestFocusInWindow();
             }
         });
+    }
+
+    /** Hitung ulang posisi semua tombol proporsional setiap panel di-resize. */
+    private void repositionButtons() {
+        int W = getWidth(), H = getHeight();
+        if (W == 0 || H == 0) return;
+        int bw = (int)(W * BTN_W);
+        int bh = (int)(H * BTN_H);
+        int by = (int)(H * BTN_Y);
+        btn13.setBounds((int)(W * COL13_X), by, bw, bh);
+        btn26.setBounds((int)(W * COL26_X), by, bw, bh);
+        btn67.setBounds((int)(W * COL67_X), by, bw, bh);
+        btnOK.setBounds((int)(W * OK_X), (int)(H * OK_Y), (int)(W * OK_W), (int)(H * OK_H));
     }
 
     private void loadBrankasImage() {
@@ -48,14 +95,13 @@ public class BrankasRoom1 extends JPanel {
         }
     }
 
-    private JButton createInvisibleButton(int x, int y, int w, int h) {
+    private JButton createInvisibleButton() {
         JButton btn = new JButton();
-        btn.setBounds(x, y, w, h);
         btn.setOpaque(false);
         btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false); // Set true untuk melihat kotak tombol saat testing
+        btn.setBorderPainted(BTN_BORDER_PAINTED);
         btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));  
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
     }
     
@@ -144,5 +190,8 @@ public class BrankasRoom1 extends JPanel {
         if (bgBrankas != null) {
             g.drawImage(bgBrankas, 0, 0, getWidth(), getHeight(), this);
         }
+        // Posisikan tombol saat pertama kali render
+        // Posisikan tombol saat pertama kali render
+        if (btn13.getWidth() == 0) repositionButtons();
     }
 }
