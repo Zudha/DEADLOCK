@@ -8,9 +8,22 @@ import java.io.IOException;
 
 /**
  * TabletPanel — menampilkan konten di dalam gambar tablet.
- * Mendukung dua mode:
- *   - NORMAL  : layar kecil di tengah tablet (untuk teks/morse)
- *   - FULLSCREEN_PUZZLE : layar besar menutupi hampir seluruh tablet (untuk BallSort/SlidingPuzzle)
+ *
+ * Semua bounds dihitung proporsional di doLayout() sehingga
+ * selalu tepat di resolusi/skala apapun — tidak pernah hardcoded.
+ *
+ * Mode:
+ *   NORMAL            — area konten menyesuaikan layar hitam di gambar tablet
+ *   FULLSCREEN_PUZZLE — area konten lebih besar (isi hampir seluruh tablet)
+ *
+ * ── Cara kalibrasi ────────────────────────────────────────────────────
+ * Ubah SHOW_DEBUG_BORDER = true untuk melihat border area konten saat runtime.
+ * Sesuaikan konstanta N_X/N_Y/N_W/N_H sampai area merah pas di atas layar
+ * hitam tablet, lalu kembalikan ke false.
+ *
+ * Dari gambar Tablet.png (1030×879 px):
+ *   Layar hitam mulai kira-kira di X=280, Y=195, lebar=690, tinggi=410
+ *   → proporsi: X≈0.272, Y≈0.222, W≈0.670, H≈0.466
  */
 public class TabletPanel extends JLayeredPane {
 
@@ -18,76 +31,116 @@ public class TabletPanel extends JLayeredPane {
 
     private static final String TABLET_IMG = "/asset/bg/Tablet.png";
 
-    // Koordinat layar NORMAL (konten teks kecil)
-    private static final int SCREEN_X = 212;
-    private static final int SCREEN_Y = 168;
-    private static final int SCREEN_W = 265;
-    private static final int SCREEN_H = 185;
+    // ── Ubah ke true saat kalibrasi ──────────────────────────────────
+    private static final boolean SHOW_DEBUG_BORDER = false;
 
-    // Koordinat layar FULLSCREEN_PUZZLE (lebih besar, cocok untuk game)
-    private static final int FULL_X = 100;
-    private static final int FULL_Y = 80;
-    private static final int FULL_W = 490;
-    private static final int FULL_H = 420;
+    // ── Proporsi NORMAL: area layar tablet (X, Y, Lebar, Tinggi) ─────
+    // Sesuaikan dengan posisi layar hitam di gambar Tablet.png
+    private static final double N_X = 0.2998;
+    private static final double N_Y = 0.2787;
+    private static final double N_W = 0.3818;
+    private static final double N_H = 0.3081;
 
+
+    // ── Proporsi FULLSCREEN_PUZZLE: hampir isi seluruh area tablet ────
+    // Sedikit lebih kecil dari tepi gambar tablet
+    private static final double F_X = 0.2998;
+    private static final double F_Y = 0.2787;
+    private static final double F_W = 0.3818;
+    private static final double F_H = 0.3081;
+
+    private final Mode mode;
     private BufferedImage tabletImg;
-    private JPanel screenArea;
+    private final JPanel bgPanel;
+    private final JPanel screenArea;
 
-    /** Constructor default — mode NORMAL */
     public TabletPanel(JPanel contentToShow) {
         this(contentToShow, Mode.NORMAL);
+        
     }
 
-    /** Constructor dengan mode eksplisit */
     public TabletPanel(JPanel contentToShow, Mode mode) {
-        setPreferredSize(new Dimension(700, 600));
-        setOpaque(false);
+        this.mode = mode;
 
-        // Load gambar tablet
         try {
             var stream = getClass().getResourceAsStream(TABLET_IMG);
             if (stream != null) tabletImg = ImageIO.read(stream);
+            else System.err.println("[TabletPanel] Tablet.png tidak ditemukan di /asset/bg/");
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        // Background tablet (gambar)
-        JPanel bg = new JPanel() {
+        // Layer 0: background (gambar tablet penuh)
+        bgPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                if (tabletImg != null)
-                    g.drawImage(tabletImg, 0, 0, getWidth(), getHeight(), this);
-                else {
-                    // Fallback: gambar outline tablet sederhana
-                    Graphics2D g2 = (Graphics2D) g;
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                if (tabletImg != null) {
+                    g2.drawImage(tabletImg, 0, 0, getWidth(), getHeight(), this);
+                } else {
+                    // Fallback jika gambar tidak ada
                     g2.setColor(new Color(40, 40, 40));
-                    g2.fillRoundRect(80, 40, 530, 510, 30, 30);
+                    g2.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 30, 30);
                     g2.setColor(new Color(80, 80, 80));
-                    g2.setStroke(new java.awt.BasicStroke(4));
-                    g2.drawRoundRect(80, 40, 530, 510, 30, 30);
+                    g2.setStroke(new BasicStroke(4));
+                    g2.drawRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 30, 30);
+                }
+
+                // Debug border merah: tampilkan area layar agar mudah kalibrasi
+                if (SHOW_DEBUG_BORDER) {
+                    int W = getWidth(), H = getHeight();
+                    double rx = (mode == Mode.FULLSCREEN_PUZZLE) ? F_X : N_X;
+                    double ry = (mode == Mode.FULLSCREEN_PUZZLE) ? F_Y : N_Y;
+                    double rw = (mode == Mode.FULLSCREEN_PUZZLE) ? F_W : N_W;
+                    double rh = (mode == Mode.FULLSCREEN_PUZZLE) ? F_H : N_H;
+                    g2.setColor(Color.RED);
+                    g2.setStroke(new BasicStroke(2));
+                    g2.drawRect((int)(W * rx), (int)(H * ry),
+                                (int)(W * rw), (int)(H * rh));
                 }
             }
         };
-        bg.setOpaque(true);
-        bg.setBackground(Color.BLACK);
-        bg.setBounds(0, 0, 700, 600);
-        add(bg, Integer.valueOf(0));
+        bgPanel.setOpaque(true);
+        bgPanel.setBackground(Color.BLACK);
+        add(bgPanel, Integer.valueOf(0));
 
-        // Pilih ukuran layar sesuai mode
-        int sx, sy, sw, sh;
-        if (mode == Mode.FULLSCREEN_PUZZLE) {
-            sx = FULL_X; sy = FULL_Y; sw = FULL_W; sh = FULL_H;
-        } else {
-            sx = SCREEN_X; sy = SCREEN_Y; sw = SCREEN_W; sh = SCREEN_H;
-        }
-
-        // Area konten puzzle di dalam layar
+        // Layer 1: area konten puzzle (di atas gambar tablet)
         screenArea = new JPanel(new BorderLayout());
         screenArea.setOpaque(true);
         screenArea.setBackground(Color.BLACK);
-        screenArea.setBounds(sx, sy, sw, sh);
-        screenArea.add(contentToShow, BorderLayout.CENTER);
+        if (contentToShow != null) {
+            screenArea.add(contentToShow, BorderLayout.CENTER);
+        }
         add(screenArea, Integer.valueOf(1));
+    }
+
+    /**
+     * Dipanggil otomatis setiap kali panel di-resize.
+     * Bounds selalu dihitung proporsional — tidak pernah hardcoded.
+     */
+    @Override
+    public void doLayout() {
+        int W = getWidth(), H = getHeight();
+        if (W == 0 || H == 0) return;
+
+        // Background penuh
+        bgPanel.setBounds(0, 0, W, H);
+
+        // Area konten sesuai mode
+        double rx = (mode == Mode.FULLSCREEN_PUZZLE) ? F_X : N_X;
+        double ry = (mode == Mode.FULLSCREEN_PUZZLE) ? F_Y : N_Y;
+        double rw = (mode == Mode.FULLSCREEN_PUZZLE) ? F_W : N_W;
+        double rh = (mode == Mode.FULLSCREEN_PUZZLE) ? F_H : N_H;
+
+        screenArea.setBounds((int)(W * rx), (int)(H * ry),
+                             (int)(W * rw), (int)(H * rh));
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        return new Dimension(700, 560);
     }
 }

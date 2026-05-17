@@ -46,13 +46,21 @@ public class LaptopLockPanel extends JPanel {
         btnBack.setBorderPainted(true);
         btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnBack.addActionListener(e -> {
-        if (currentMode == Mode.CLUE_BRANKAS) {
-            parent.backToRoom1();
-            }   else {
-                parent.room1();
+            if (currentMode == Mode.CLUE_JAM || currentMode == Mode.CLUE_BRANKAS) {
+                parent.backToRoom1(); // Kembali ke room1 scene agar bisa akses brankas
+            } else {
+                parent.room1();       // Mode LOCK: kembali ke awal room1
             }
         });
         add(btnBack);
+        if (this.currentMode == Mode.CLUE_JAM) {
+            Timer transitionTimer = new Timer(5000, ev -> {
+                this.currentMode = Mode.LOCK.CLUE_BRANKAS; // Pindah mode ke Brankas
+                repaint();
+            });
+            transitionTimer.setRepeats(false);
+            transitionTimer.start();
+        }
     }
 
     private void loadLaptopImage() {
@@ -85,8 +93,15 @@ public class LaptopLockPanel extends JPanel {
     }
 
     private void handleKeyInput(KeyEvent e) {
-        if (currentMode == Mode.LOCK) handleLockInput(e);
-        else if (currentMode == Mode.CLUE_JAM) handleJamInput(e);
+        if (currentMode == Mode.LOCK) {
+            handleLockInput(e);
+        } else if (currentMode == Mode.CLUE_JAM) {
+            // Jika ditekan ENTER, langsung pindah ke Clue Brankas
+            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                this.currentMode = Mode.CLUE_BRANKAS;
+                repaint();
+            }
+        }
     }
 
     private void handleLockInput(KeyEvent e) {
@@ -113,29 +128,7 @@ public class LaptopLockPanel extends JPanel {
         repaint();
     }
 
-    private void handleJamInput(KeyEvent e) {
-        int code = e.getKeyCode();
-        if (code >= KeyEvent.VK_0 && code <= KeyEvent.VK_9) {
-            if (pinBuffer.length() < 4) { pinBuffer.append((char) e.getKeyChar()); feedbackMsg = ""; }
-        } else if (code == KeyEvent.VK_BACK_SPACE) {
-            if (pinBuffer.length() > 0) pinBuffer.deleteCharAt(pinBuffer.length() - 1);
-            feedbackMsg = "";
-        } else if (code == KeyEvent.VK_ENTER) {
-            if (pinBuffer.toString().equals("0830")) {
-                cursorTimer.stop();
-                feedbackMsg = "✓ JAM BERIKUTNYA BENAR!";
-                feedbackColor = new Color(50, 255, 50);
-                repaint();
-                Timer t = new Timer(900, ev -> parent.openLaptopClueBrankas());
-                t.setRepeats(false); t.start();
-            } else {
-                feedbackMsg = "✗ JAWABAN SALAH — PERHATIKAN POLA JAM";
-                feedbackColor = new Color(255, 80, 80);
-                pinBuffer.setLength(0);
-            }
-        }
-        repaint();
-    }
+    // CLUE_JAM hanya menampilkan clue — tidak ada input keyboard
 
     // ── RENDER ──────────────────────────────────────────────────
     @Override
@@ -270,50 +263,28 @@ public class LaptopLockPanel extends JPanel {
         int clockH  = (int)(sh * 0.28);
         int colW    = sw / 3;
 
-        // Jam 1 — HIJAU  06:00
+       
         drawClockBox(g2, sx,           clockY, colW, clockH,
-                     "HIJAU",  "06:00", new Color(50, 220, 80));
-        // Jam 2 — MERAH  01:00
-        drawClockBox(g2, sx + colW,    clockY, colW, clockH,
                      "MERAH",  "01:00", new Color(220, 60, 60));
+        
+        drawClockBox(g2, sx + colW,    clockY, colW, clockH,
+                     "HIJAU",  "03:30", new Color(50, 220, 80));
         // Jam 3 — BIRU   03:30
         drawClockBox(g2, sx + colW*2,  clockY, colW, clockH,
-                     "BIRU",   "03:30", new Color(60, 140, 255));
+                     "BIRU",   "06:00", new Color(60, 140, 255));
 
         // ── Instruksi teka-teki ──
         int iy = clockY + clockH + (int)(sh * 0.06);
         g2.setFont(new Font("Monospaced", Font.ITALIC, Math.max(5, (int)(sh * 0.065))));
         g2.setColor(new Color(200, 190, 100));
-        g2.drawString("Urutkan: B → H → M", sx + 10, iy);
-        g2.drawString("Lalu cari jam M berikutnya!", sx + 10, iy + (int)(sh * 0.09));
+        g2.drawString("Cari jam berikutnya!", sx + 10, iy + (int)(sh * 0.09));
 
-        // ── Input box ──
-        int boxW = (int)(sw * 0.55), boxH2 = (int)(sh * 0.14);
-        int boxX = cx - boxW / 2;
-        int boxY = sy + (int)(sh * 0.84);
-        g2.setColor(new Color(20, 20, 40));
-        g2.fillRoundRect(boxX, boxY, boxW, boxH2, 8, 8);
-        g2.setColor(new Color(255, 220, 50, 180));
-        g2.setStroke(new BasicStroke(1.5f));
-        g2.drawRoundRect(boxX, boxY, boxW, boxH2, 8, 8);
-
-        g2.setFont(new Font("Monospaced", Font.BOLD, (int)(sh * 0.11)));
-        g2.setColor(new Color(255, 220, 50));
-        StringBuilder display = new StringBuilder();
-        for (char c : pinBuffer.toString().toCharArray()) display.append(c);
-        if (cursorVisible) display.append("|");
-        g2.drawString(display.toString(), boxX + 8, boxY + (int)(boxH2 * 0.78));
-
-        g2.setFont(new Font("Monospaced", Font.PLAIN, Math.max(5, (int)(sh * 0.055))));
-        g2.setColor(new Color(120, 120, 120));
-        g2.drawString("4 digit HHMM  [ENTER]", boxX, boxY + boxH2 + (int)(sh * 0.06));
-
-        if (!feedbackMsg.isEmpty()) {
-            g2.setFont(new Font("Monospaced", Font.BOLD, (int)(sh * 0.065)));
-            g2.setColor(feedbackColor);
-            FontMetrics fm = g2.getFontMetrics();
-            g2.drawString(feedbackMsg, cx - fm.stringWidth(feedbackMsg) / 2, boxY + boxH2 + (int)(sh * 0.13));
-        }
+        // ── Footer — tidak ada input, hanya hint ──
+        g2.setFont(new Font("Monospaced", Font.PLAIN, Math.max(5, (int)(sh * 0.06))));
+        g2.setColor(new Color(100, 100, 100));
+        String hint =  "\u2190 Tekan ENTER untuk melanjutkan";
+        g2.drawString(hint, cx - g2.getFontMetrics().stringWidth(hint) / 2,
+                      sy + sh - (int)(sh * 0.06));
     }
 
     /** Gambar kotak kecil jam dengan label warna dan waktu */
@@ -359,7 +330,6 @@ public class LaptopLockPanel extends JPanel {
         g2.setFont(new Font("Monospaced", Font.PLAIN, fs));
         g2.setColor(new Color(200, 200, 200));
         String[] lines = {
-            "Bagus. Kamu menemukan polanya.",
             "",
             "Di 2025, ada hal trending",
             "yang berhubungan dengan angka.",

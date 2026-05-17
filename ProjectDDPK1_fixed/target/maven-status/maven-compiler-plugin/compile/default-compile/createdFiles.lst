@@ -2,7 +2,6 @@ com\kelompok7\projectddpk1\testGUI\EscapeRoomGUI.class
 com\kelompok7\projectddpk1\testGUI\KoranPanel.class
 com\kelompok7\projectddpk1\testGUI\BrankasRoom1.class
 com\kelompok7\projectddpk1\testGUI\EscapeRoomGUI$4.class
-com\kelompok7\projectddpk1\testGUI\PintuRoom1$2.class
 com\kelompok7\projectddpk1\testGUI\ScenePanel$3.class
 com\kelompok7\projectddpk1\testGUI\CutscenePanel.class
 com\kelompok7\projectddpk1\testGUI\EscapeRoomGUI$1.class
@@ -13,10 +12,10 @@ com\kelompok7\projectddpk1\testGUI\BrankasRoom1$1.class
 com\kelompok7\projectddpk1\testGUI\GameOverPanel.class
 com\kelompok7\projectddpk1\testGUI\SlidingPuzzlePanel.class
 com\kelompok7\projectddpk1\testGUI\EscapeRoomGUI$3.class
-com\kelompok7\projectddpk1\testGUI\GameOverPanel$2.class
 com\kelompok7\projectddpk1\testGUI\BallSortPanel$1.class
 com\kelompok7\projectddpk1\testGUI\ScenePanel$2.class
 com\kelompok7\projectddpk1\testGUI\LaptopLockPanel$2.class
+com\kelompok7\projectddpk1\testGUI\SlidingPuzzlePanel$1.class
 com\kelompok7\projectddpk1\testGUI\TabletPanel$Mode.class
 com\kelompok7\projectddpk1\testGUI\PintuRoom1.class
 com\kelompok7\projectddpk1\testGUI\LaptopLockPanel$Mode.class

@@ -130,7 +130,7 @@ public class BrankasRoom1 extends JPanel {
         btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnOk.addActionListener(ev -> {
             dialog.dispose();
-            parent.room4();
+            parent.showPintu(); // Kunci emas diambil → ke pintu untuk input PIN
         });
         notePanel.add(btnOk);
 

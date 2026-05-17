@@ -24,7 +24,7 @@ public class KoranPanel extends JPanel {
 
         // Tombol tutup di pojok kanan atas
         JButton btnClose = new JButton("✕  Tutup Koran");
-        btnClose.setBounds(540, 20, 140, 36);
+        btnClose.setBounds(650, 20, 140, 36);
         btnClose.setBackground(new Color(50, 50, 50));
         btnClose.setForeground(new Color(50, 255, 50));
         btnClose.setFont(new Font("Monospaced", Font.BOLD, 13));
@@ -33,13 +33,6 @@ public class KoranPanel extends JPanel {
         btnClose.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnClose.addActionListener(e -> parent.afterKoran());
         add(btnClose);
-
-        // Label petunjuk bawah
-        JLabel hint = new JLabel("Perhatikan tanggal penerbitan koran ini...", JLabel.CENTER);
-        hint.setBounds(0, 540, 700, 30);
-        hint.setForeground(new Color(200, 200, 100));
-        hint.setFont(new Font("Monospaced", Font.ITALIC, 13));
-        add(hint);
     }
 
     private void loadKoranImage() {

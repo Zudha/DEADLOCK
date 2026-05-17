@@ -243,6 +243,26 @@ public class EscapeRoomGUI extends JFrame {
         });
         timer.start();
     }
+    
+    // Tambah method ini di EscapeRoomGUI.java
+    public void nextFromSlidingPuzzle() {
+        showTextMode();
+        clear();
+        print("--- SISTEM TERHUBUNG ---");
+        print("");
+        print("Klik. Klik. Klik.");
+        print("Pintu besi di ujung ruangan bergetar.");
+        print("");
+        print("Raka menelan ludah. Di balik pintu itu...");
+        print("entah apa yang menunggu.");
+        print("");
+        print("Tapi tidak ada pilihan lain.");
+        print("Dia melangkah maju.");
+
+        Timer t = new Timer(4000, e -> { state = 9; roomMazeIntro(); });
+        t.setRepeats(false);
+        t.start();
+    }
 
     // ================================================================
     // MAIN MENU (image-based with click listener)
@@ -441,8 +461,46 @@ public class EscapeRoomGUI extends JFrame {
         showPintu();
     }
 
-    // ── Panel pintu — butuh kunci emas + PIN 0830 ─────────────────
+    // ── Setelah brankas dibuka → kembali ke scene room1, player
+    //    harus jalan ke pintu dan tekan E untuk interact
     void showPintu() {
+        showSceneMode();
+        scenePanel.setBackground("/asset/bg/room1.png");
+        scenePanel.resetCharPos();
+        scenePanel.clearOnDialogShown();
+
+        // Pintu ada di dekat jam 06:00 (pojok kiri atas gambar room1)
+        scenePanel.setDeskPosition(148, 100, 80, 80);
+        scenePanel.setInteractHint("[ E ] Gunakan Kunci Emas");
+        scenePanel.setInteractDialog("RAKA",
+            "Ini pintu keluarnya!",
+            "Aku punya kunci emasnya dari brankas tadi.",
+            "Tapi... ada keypad PIN di sini.",
+            "Aku harus ingat jawaban teka-teki jam dari laptop."
+        );
+
+        scenePanel.enableCollision(true);
+        java.util.List<java.awt.Rectangle> walls = new java.util.ArrayList<>();
+        scenePanel.setCollisionRects(walls);
+        walls.add(new java.awt.Rectangle(9, 386, 94, 166));
+        walls.add(new java.awt.Rectangle(201, 349, 56, 107));
+        walls.add(new java.awt.Rectangle(334, 368, 52, 58));
+        walls.add(new java.awt.Rectangle(460, 358, 55, 83));
+        walls.add(new java.awt.Rectangle(8, 86, 101, 132));
+        walls.add(new java.awt.Rectangle(5, 16, 694, 70));
+
+        scenePanel.setOnDialogShown(() -> {
+            Timer t = new Timer(1200, e -> openPintuPanel());
+            t.setRepeats(false);
+            t.start();
+        });
+
+        input.setEnabled(false);
+        scenePanel.requestFocusInWindow();
+    }
+
+    // ── Buka panel input PIN (setelah interact pintu di scene) ───
+    void openPintuPanel() {
         centerPanel.removeAll();
         PintuRoom1 pintuPanel = new PintuRoom1(this);
         centerPanel.add(pintuPanel, BorderLayout.CENTER);
@@ -456,7 +514,7 @@ public class EscapeRoomGUI extends JFrame {
     public void doorOpened() {
         // Pintu terbuka! Lanjut ke room2 (atau room berikutnya dalam alur)
         state = 2;
-        room2();
+        room4();
     }
 
     // ================================================================
@@ -655,49 +713,85 @@ public class EscapeRoomGUI extends JFrame {
     }
 
     void showMorsePuzzle() {
-        // Buat layar tablet khusus untuk morse — lamp + teks
-        JPanel tabletScreen = new JPanel();
-        tabletScreen.setLayout(new BoxLayout(tabletScreen, BoxLayout.Y_AXIS));
+        // ── Layout tablet: lampu morse + teks + input field (semua di dalam tablet) ──
+        JPanel tabletScreen = new JPanel(new BorderLayout());
         tabletScreen.setBackground(Color.BLACK);
 
-        // Lampu kecil di dalam tablet
+        // Panel atas: lampu + teks
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(Color.BLACK);
+
+        // Lampu morse — bulat, bisa nyala/mati
         JPanel tabletLamp = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                g.setColor(getBackground());
-                g.fillOval(5, 5, 50, 50);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                int s = Math.min(getWidth(), getHeight()) - 10;
+                g2.fillOval((getWidth()-s)/2, (getHeight()-s)/2, s, s);
+                // Outline
+                g2.setColor(new Color(80, 80, 80));
+                g2.setStroke(new BasicStroke(2));
+                g2.drawOval((getWidth()-s)/2, (getHeight()-s)/2, s, s);
             }
         };
-        tabletLamp.setPreferredSize(new Dimension(20, 20));
-        tabletLamp.setMaximumSize(new Dimension(20, 20));
-        tabletLamp.setAlignmentX(Component.CENTER_ALIGNMENT);
         tabletLamp.setBackground(Color.BLACK);
+        tabletLamp.setPreferredSize(new Dimension(60, 60));
+        tabletLamp.setOpaque(false);
+
+        JPanel lampWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        lampWrapper.setBackground(Color.BLACK);
+        lampWrapper.add(tabletLamp);
+        lampWrapper.setPreferredSize(new Dimension(100, 70));
 
         JTextArea tabletText = new JTextArea();
         tabletText.setEditable(false);
         tabletText.setBackground(Color.BLACK);
         tabletText.setForeground(new Color(50, 255, 50));
-        tabletText.setFont(new Font("Monospaced", Font.PLAIN, 10));
-        tabletText.setMargin(new Insets(3, 5, 3, 5));
+        tabletText.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        tabletText.setMargin(new Insets(5, 8, 5, 8));
         tabletText.setLineWrap(true);
         tabletText.setWrapStyleWord(true);
-        tabletText.append("[ TABLET ] Sinyal morse...\n");
-        tabletText.append("Perhatikan cahaya!\n");
+        tabletText.append("[ TABLET ] Sinyal Morse\n");
+        tabletText.append("Perhatikan lampu berkedip!\n");
+        tabletText.append("Catat pola: titik (.) dan garis (-)\n");
+        tabletText.append("lalu terjemahkan ke angka.\n");
 
-        tabletScreen.add(Box.createVerticalStrut(8));
-        tabletScreen.add(tabletLamp);
-        tabletScreen.add(Box.createVerticalStrut(5));
-        tabletScreen.add(new JScrollPane(tabletText));
+        topPanel.add(lampWrapper, BorderLayout.WEST);
+        topPanel.add(new JScrollPane(tabletText), BorderLayout.CENTER);
 
-        // Tampilkan tablet
-        TabletPanel tablet = new TabletPanel(tabletScreen);
+        // Panel bawah: input jawaban morse (aktif setelah morse selesai)
+        JPanel inputArea = new JPanel(new BorderLayout());
+        inputArea.setBackground(new Color(10, 10, 30));
+        inputArea.setBorder(BorderFactory.createLineBorder(new Color(50, 255, 50), 1));
+
+        JLabel inputLabel = new JLabel(" Jawaban: ", JLabel.CENTER);
+        inputLabel.setForeground(new Color(50, 255, 50));
+        inputLabel.setFont(new Font("Monospaced", Font.BOLD, 12));
+
+        JTextField morseInput = new JTextField();
+        morseInput.setBackground(new Color(5, 5, 20));
+        morseInput.setForeground(Color.WHITE);
+        morseInput.setCaretColor(Color.WHITE);
+        morseInput.setFont(new Font("Monospaced", Font.BOLD, 14));
+        morseInput.setEnabled(false);
+
+        inputArea.add(inputLabel, BorderLayout.WEST);
+        inputArea.add(morseInput, BorderLayout.CENTER);
+
+        tabletScreen.add(topPanel, BorderLayout.CENTER);
+        tabletScreen.add(inputArea, BorderLayout.SOUTH);
+
+        // Tampilkan di dalam TabletPanel FULLSCREEN agar memenuhi layar
+        TabletPanel tablet = new TabletPanel(tabletScreen, TabletPanel.Mode.FULLSCREEN_PUZZLE);
         centerPanel.removeAll();
         centerPanel.add(tablet, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
 
-        // Jalankan morse pakai lampu tablet (bukan lamp global)
+        // ── Jalankan animasi morse ──
         int unit = 250;
         input.setEnabled(false);
         String morse = "--... ----. ..--- .....";
@@ -711,13 +805,25 @@ public class EscapeRoomGUI extends JFrame {
                 timer.stop();
                 tabletLamp.setBackground(Color.BLACK);
                 tabletLamp.repaint();
-                tabletText.append("\nSelesai. Terjemahkan!\n");
-                // Kembali ke text mode untuk input
-                showLampMode();
-                clear();
-                print("[ TABLET ] Sinyal selesai. Masukkan kode morse yang sudah diterjemahkan:");
+                tabletText.append("\n--- Selesai! Masukkan jawabanmu ---\n");
+                // Aktifkan input di dalam tablet
+                morseInput.setEnabled(true);
+                SwingUtilities.invokeLater(() -> morseInput.requestFocusInWindow());
                 state = 7;
-                input.setEnabled(true);
+
+                morseInput.addActionListener(ev -> {
+                    String val = morseInput.getText().trim();
+                    morseInput.setText("");
+                    if (val.equals("7925")) {
+                        tabletText.append("\n✓ BENAR! Kode morse terpecahkan.\n");
+                        morseInput.setEnabled(false);
+                        Timer next = new Timer(800, ex -> { state = 8; room6(); });
+                        next.setRepeats(false);
+                        next.start();
+                    } else {
+                        tabletText.append("✗ Salah. Coba lagi!\n");
+                    }
+                });
                 return;
             }
             char c = morse.charAt(idx[0]);
@@ -808,10 +914,10 @@ public class EscapeRoomGUI extends JFrame {
         scenePanel.setDeskPosition(40, 255, 60, 60);
         scenePanel.setInteractHint("[ E ] Lihat Tablet");
         scenePanel.setInteractDialog("NARRATOR",
-            "--- PUZZLE 7: SLIDING PUZZLE ---",
+            "--- PUZZLE 7: SAMBUNGKAN KABEL ---",
             "Tablet menyala untuk terakhir kalinya.",
-            "Angka-angka acak memenuhi layar.",
-            "Susun hingga berurutan. Ini kesempatanmu keluar!"
+            "Kabel-kabel acak memenuhi layar.",
+            "Putar tiap bagian hingga jalur tersambung. Ini kesempatanmu keluar!"
         );
 
         scenePanel.enableCollision(false);
@@ -877,7 +983,7 @@ public class EscapeRoomGUI extends JFrame {
             centerPanel.repaint();
             input.setEnabled(false);
             scenePanel.requestFocusInWindow();
-            scenePanel.enableFog(false);
+            scenePanel.enableFog(true);
             scenePanel.setBackground("/asset/bg/maze.png");
             scenePanel.setCharPos(62, 83);
             scenePanel.setRenderScale(0.5f);
@@ -1034,11 +1140,8 @@ walls.add(new Rectangle(312, 82, 44, 6));
             // Room 4: input memori ditangani langsung di TabletPanel (state 6)
             // case 6 — handled inside showMemoriPuzzle tablet input
 
-            // Room 5: input morse
-            case 7 -> {
-                if (inputUser.equals("7925")) { state = 8; room6(); }
-                else gameOver();
-            }
+            // Room 5: input morse ditangani di dalam TabletPanel (morseInput)
+            // case 7 — handled inside showMorsePuzzle tablet input
 
             // Room 7/8: input sliding puzzle → maze
             case 8 -> {

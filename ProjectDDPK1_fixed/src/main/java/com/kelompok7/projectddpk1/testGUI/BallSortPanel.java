@@ -8,6 +8,7 @@ import java.util.Stack;
 public class BallSortPanel extends JPanel {
     private Stack<Color>[] tubes = new Stack[4];
     private Color selectedColor = null;
+    private int selectedTube = -1;
     private final int MAX_SIZE = 4;
     private EscapeRoomGUI parent;
 
@@ -15,51 +16,45 @@ public class BallSortPanel extends JPanel {
     private final int MAX_MOVES = 20;
     private JLabel movesLabel;
     private Timer puzzleTimer;
-    
-    
+
     public BallSortPanel(EscapeRoomGUI parent) {
         this.parent = parent;
         this.setLayout(new BorderLayout());
         setBackground(Color.BLACK);
-        
+
         for (int i = 0; i < 4; i++) {
             tubes[i] = new Stack<>();
         }
 
-        // --- SETUP BOLA (3 WARNA, 1 TABUNG KOSONG) ---
-        // Tabung 0: Campuran 1
-        tubes[0].push(Color.RED); 
-        tubes[0].push(Color.BLUE); 
-        tubes[0].push(Color.GREEN); 
+        tubes[0].push(Color.RED);
+        tubes[0].push(Color.BLUE);
+        tubes[0].push(Color.GREEN);
         tubes[0].push(Color.RED);
 
-        // Tabung 1: Campuran 2
-        tubes[1].push(Color.BLUE); 
-        tubes[1].push(Color.GREEN); 
-        tubes[1].push(Color.RED); 
+        tubes[1].push(Color.BLUE);
+        tubes[1].push(Color.GREEN);
+        tubes[1].push(Color.RED);
         tubes[1].push(Color.BLUE);
 
-        // Tabung 2: Campuran 3
-        tubes[2].push(Color.GREEN); 
-        tubes[2].push(Color.RED); 
-        tubes[2].push(Color.BLUE); 
         tubes[2].push(Color.GREEN);
-        
+        tubes[2].push(Color.RED);
+        tubes[2].push(Color.BLUE);
+        tubes[2].push(Color.GREEN);
+
+        // Tabung 3: KOSONG
+
         movesLabel = new JLabel("Moves: 0/" + MAX_MOVES, JLabel.CENTER);
         movesLabel.setForeground(Color.WHITE);
         movesLabel.setOpaque(false);
-        
         add(movesLabel, BorderLayout.NORTH);
 
         puzzleTimer = new Timer(1000, e -> {
-        if (moves >= MAX_MOVES && !checkWinLogic()) {
-            puzzleTimer.stop();
-            parent.gameOver();
-        }
+            if (moves >= MAX_MOVES && !checkWinLogic()) {
+                puzzleTimer.stop();
+                parent.gameOver();
+            }
         });
         puzzleTimer.start();
-
-        // Tabung 3: KOSONG (Wajib kosong agar bisa dimainkan)
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -72,20 +67,18 @@ public class BallSortPanel extends JPanel {
             }
         });
     }
-    
 
     private void handleTubeClick(int index) {
         if (selectedColor == null) {
-            // Ambil bola
             if (!tubes[index].isEmpty()) {
                 selectedColor = tubes[index].pop();
+                selectedTube = index;
             }
         } else {
-            // Taruh bola
             if (tubes[index].size() < MAX_SIZE) {
                 tubes[index].push(selectedColor);
                 selectedColor = null;
-                
+                selectedTube = -1;
                 moves++;
                 movesLabel.setText("Moves: " + moves + "/" + MAX_MOVES);
                 checkWin();
@@ -98,7 +91,7 @@ public class BallSortPanel extends JPanel {
         int solvedTubes = 0;
         for (Stack<Color> tube : tubes) {
             if (tube.isEmpty()) {
-                solvedTubes++; 
+                solvedTubes++;
             } else if (tube.size() == MAX_SIZE) {
                 Color first = tube.get(0);
                 boolean allSame = true;
@@ -110,18 +103,16 @@ public class BallSortPanel extends JPanel {
         }
         return solvedTubes == 4;
     }
-    
-     private boolean checkWin() {
-        // Panggil logika yang sudah ada
+
+    private boolean checkWin() {
         boolean won = checkWinLogic();
-    
         if (won) {
-            puzzleTimer.stop(); // Bagus kalau distop di sini juga
+            puzzleTimer.stop();
             JOptionPane.showMessageDialog(this, "Warna Terpola! Sistem Berhasil Diurutkan.");
-            parent.nextFromBallSort(); 
+            parent.nextFromBallSort();
         }
-    return won;
-}
+        return won;
+    }
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -129,34 +120,66 @@ public class BallSortPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        int tubeWidth = getWidth() / 4;
-        int yOffset = 200; // Jarak dari atas (Tabung ditaruh lebih bawah)
+        int W = getWidth();
+        int H = getHeight();
+
+        int numTubes = 4;
+        int tubeWidth = W / numTubes;
+
+        int tubeW   = (int)(tubeWidth * 0.55);
+        int tubeH   = (int)(H * 0.70);
+        int yOffset = (int)(H * 0.20);
+        int ballW   = (int)(tubeWidth * 0.50);
+        int ballH   = (int)(tubeH / MAX_SIZE) - 4;
+        int xPad    = (tubeWidth - tubeW) / 2;
 
         for (int i = 0; i < 4; i++) {
-            // Gambar Frame Tabung
+            int xBase = i * tubeWidth + xPad;
+
+            // Highlight border tabung yang dipilih
+            if (i == selectedTube) {
+                g2.setColor(Color.YELLOW);
+                g2.setStroke(new BasicStroke(3));
+                g2.drawRoundRect(xBase - 2, yOffset - 2, tubeW + 4, tubeH + 4, 20, 20);
+            }
+
+            // Frame tabung
             g2.setColor(Color.LIGHT_GRAY);
-            g2.setStroke(new BasicStroke(4));
-            g2.drawRoundRect(i * tubeWidth + 40, yOffset, 80, 220, 20, 20);
-            
-            // Gambar Isi Bola
+            g2.setStroke(new BasicStroke(3));
+            g2.drawRoundRect(xBase, yOffset, tubeW, tubeH, 20, 20);
+
+            // Isi bola
             for (int j = 0; j < tubes[i].size(); j++) {
+                int ballX = xBase + (tubeW - ballW) / 2;
+                int ballY = yOffset + tubeH - (j + 1) * (ballH + 4);
+
                 g2.setColor(tubes[i].get(j));
-                // Jarak antar bola disesuaikan (yOffset + bawah - urutan_bola)
-                g2.fillOval(i * tubeWidth + 45, (yOffset + 165) - (j * 52), 70, 50);
-                
-                // Efek cahaya biar estetik
+                g2.fillOval(ballX, ballY, ballW, ballH);
+
                 g2.setColor(new Color(255, 255, 255, 60));
-                g2.fillOval(i * tubeWidth + 55, (yOffset + 170) - (j * 52), 15, 10);
+                g2.fillOval(ballX + (int)(ballW * 0.15), ballY + (int)(ballH * 0.1),
+                            (int)(ballW * 0.25), (int)(ballH * 0.25));
             }
         }
 
-        // Tampilan bola yang sedang dibawa (Data Temp)
-        if (selectedColor != null) {
+        // Bola melayang di atas tabung yang diklik
+        if (selectedColor != null && selectedTube >= 0) {
+            int xBase = selectedTube * tubeWidth + xPad;
+            int ballX = xBase + (tubeW - ballW) / 2;
+            int ballY = yOffset - ballH - 8;
+
+            // Bayangan
+            g2.setColor(new Color(0, 0, 0, 60));
+            g2.fillOval(ballX + 4, ballY + ballH - 4, ballW, 10);
+
+            // Bola
             g2.setColor(selectedColor);
-            g2.fillOval(getWidth() / 2 - 35, 50, 70, 50);
-            g2.setColor(Color.WHITE);
-            g2.setFont(new Font("SansSerif", Font.BOLD, 12));
-            g2.drawString("WARNA DI TANGAN", getWidth() / 2 - 55, 120);
+            g2.fillOval(ballX, ballY, ballW, ballH);
+
+            // Efek cahaya
+            g2.setColor(new Color(255, 255, 255, 80));
+            g2.fillOval(ballX + (int)(ballW * 0.15), ballY + (int)(ballH * 0.1),
+                        (int)(ballW * 0.25), (int)(ballH * 0.25));
         }
     }
 }
