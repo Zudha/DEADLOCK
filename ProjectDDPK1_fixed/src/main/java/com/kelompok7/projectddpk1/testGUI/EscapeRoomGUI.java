@@ -344,7 +344,7 @@ public class EscapeRoomGUI extends JFrame {
         centerPanel.add(new KoranPanel(this), BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
-        input.setEnabled(true);
+        input.setEnabled(false);
     }
 
     // ── Setelah koran ditutup → laptop lockscreen ────────────────
@@ -712,7 +712,7 @@ public class EscapeRoomGUI extends JFrame {
         scenePanel.requestFocusInWindow();
     }
 
-    void showMorsePuzzle() {
+        void showMorsePuzzle() {
         // ── Layout tablet: lampu morse + teks + input field (semua di dalam tablet) ──
         JPanel tabletScreen = new JPanel(new BorderLayout());
         tabletScreen.setBackground(Color.BLACK);
@@ -731,7 +731,6 @@ public class EscapeRoomGUI extends JFrame {
                 g2.setColor(getBackground());
                 int s = Math.min(getWidth(), getHeight()) - 10;
                 g2.fillOval((getWidth()-s)/2, (getHeight()-s)/2, s, s);
-                // Outline
                 g2.setColor(new Color(80, 80, 80));
                 g2.setStroke(new BasicStroke(2));
                 g2.drawOval((getWidth()-s)/2, (getHeight()-s)/2, s, s);
@@ -762,7 +761,7 @@ public class EscapeRoomGUI extends JFrame {
         topPanel.add(lampWrapper, BorderLayout.WEST);
         topPanel.add(new JScrollPane(tabletText), BorderLayout.CENTER);
 
-        // Panel bawah: input jawaban morse (aktif setelah morse selesai)
+        // Panel bawah: input + tombol ulangi
         JPanel inputArea = new JPanel(new BorderLayout());
         inputArea.setBackground(new Color(10, 10, 30));
         inputArea.setBorder(BorderFactory.createLineBorder(new Color(50, 255, 50), 1));
@@ -778,81 +777,122 @@ public class EscapeRoomGUI extends JFrame {
         morseInput.setFont(new Font("Monospaced", Font.BOLD, 14));
         morseInput.setEnabled(false);
 
+        // ── Tombol Ulangi Morse ──────────────────────────────────────
+        JButton btnUlangi = new JButton("↺ Ulangi Morse");
+        btnUlangi.setBackground(new Color(20, 20, 50));
+        btnUlangi.setForeground(new Color(50, 255, 50));
+        btnUlangi.setFont(new Font("Monospaced", Font.BOLD, 11));
+        btnUlangi.setFocusPainted(false);
+        btnUlangi.setBorderPainted(true);
+        btnUlangi.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnUlangi.setEnabled(false); // aktif setelah morse selesai pertama kali
+
         inputArea.add(inputLabel, BorderLayout.WEST);
         inputArea.add(morseInput, BorderLayout.CENTER);
+        inputArea.add(btnUlangi, BorderLayout.EAST);
 
         tabletScreen.add(topPanel, BorderLayout.CENTER);
         tabletScreen.add(inputArea, BorderLayout.SOUTH);
 
-        // Tampilkan di dalam TabletPanel FULLSCREEN agar memenuhi layar
         TabletPanel tablet = new TabletPanel(tabletScreen, TabletPanel.Mode.FULLSCREEN_PUZZLE);
         centerPanel.removeAll();
         centerPanel.add(tablet, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
 
-        // ── Jalankan animasi morse ──
+        // ── Logika animasi morse dibungkus dalam Runnable agar bisa diulang ──
+        String morse = "--... ----. ..--- .....";
         int unit = 250;
         input.setEnabled(false);
-        String morse = "--... ----. ..--- .....";
-        Timer timer = new Timer(unit, null);
-        final int[] idx = {0};
-        final boolean[] isOn = {false};
-        final boolean[] isGap = {false};
 
-        timer.addActionListener(e -> {
-            if (idx[0] >= morse.length()) {
-                timer.stop();
-                tabletLamp.setBackground(Color.BLACK);
-                tabletLamp.repaint();
-                tabletText.append("\n--- Selesai! Masukkan jawabanmu ---\n");
-                // Aktifkan input di dalam tablet
-                morseInput.setEnabled(true);
-                SwingUtilities.invokeLater(() -> morseInput.requestFocusInWindow());
-                state = 7;
+        // Pakai array agar bisa direferensikan dari lambda
+        final Timer[] timerHolder = {null};
 
-                morseInput.addActionListener(ev -> {
-                    String val = morseInput.getText().trim();
-                    morseInput.setText("");
-                    if (val.equals("7925")) {
-                        tabletText.append("\n✓ BENAR! Kode morse terpecahkan.\n");
-                        morseInput.setEnabled(false);
-                        Timer next = new Timer(800, ex -> { state = 8; room6(); });
-                        next.setRepeats(false);
-                        next.start();
-                    } else {
-                        tabletText.append("✗ Salah. Coba lagi!\n");
-                    }
-                });
-                return;
+        Runnable runMorse = () -> {
+            // Stop timer lama jika masih jalan
+            if (timerHolder[0] != null && timerHolder[0].isRunning()) {
+                timerHolder[0].stop();
             }
-            char c = morse.charAt(idx[0]);
-            if (c == ' ') {
-                if (!isGap[0]) {
-                    tabletLamp.setBackground(Color.BLACK);
-                    timer.setDelay(unit * 5);
-                    isGap[0] = true;
-                } else {
-                    tabletLamp.setBackground(Color.BLACK);
-                    timer.setDelay(unit * 5);
-                    isGap[0] = false;
-                    idx[0]++;
-                }
-            } else {
-                if (!isOn[0]) {
-                    tabletLamp.setBackground(Color.WHITE);
-                    timer.setDelay(c == '-' ? unit * 3 : unit * 1);
-                    isOn[0] = true;
-                } else {
-                    tabletLamp.setBackground(Color.BLACK);
-                    timer.setDelay(unit * 2);
-                    isOn[0] = false;
-                    idx[0]++;
-                }
-            }
+
+            morseInput.setEnabled(false);
+            btnUlangi.setEnabled(false);
+            tabletLamp.setBackground(Color.BLACK);
             tabletLamp.repaint();
+            tabletText.append("\n--- Memutar sinyal morse... ---\n");
+
+            final int[] idx   = {0};
+            final boolean[] isOn  = {false};
+            final boolean[] isGap = {false};
+
+            Timer timer = new Timer(unit, null);
+            timerHolder[0] = timer;
+
+            timer.addActionListener(e -> {
+                if (idx[0] >= morse.length()) {
+                    timer.stop();
+                    tabletLamp.setBackground(Color.BLACK);
+                    tabletLamp.repaint();
+                    tabletText.append("--- Selesai! Masukkan jawabanmu ---\n");
+                    morseInput.setEnabled(true);
+                    btnUlangi.setEnabled(true); // aktifkan tombol ulangi
+                    SwingUtilities.invokeLater(() -> morseInput.requestFocusInWindow());
+                    state = 7;
+                    return;
+                }
+                char c = morse.charAt(idx[0]);
+                if (c == ' ') {
+                    if (!isGap[0]) {
+                        tabletLamp.setBackground(Color.BLACK);
+                        timer.setDelay(unit * 5);
+                        isGap[0] = true;
+                    } else {
+                        tabletLamp.setBackground(Color.BLACK);
+                        timer.setDelay(unit * 5);
+                        isGap[0] = false;
+                        idx[0]++;
+                    }
+                } else {
+                    if (!isOn[0]) {
+                        tabletLamp.setBackground(Color.WHITE);
+                        timer.setDelay(c == '-' ? unit * 3 : unit * 1);
+                        isOn[0] = true;
+                    } else {
+                        tabletLamp.setBackground(Color.BLACK);
+                        timer.setDelay(unit * 2);
+                        isOn[0] = false;
+                        idx[0]++;
+                    }
+                }
+                tabletLamp.repaint();
+            });
+            timer.start();
+        };
+
+        // Tombol ulangi: stop timer lama, reset, putar ulang
+        btnUlangi.addActionListener(e -> {
+            morseInput.setText("");
+            runMorse.run();
         });
-        timer.start();
+
+        // Input jawaban
+        morseInput.addActionListener(ev -> {
+            String val = morseInput.getText().trim();
+            morseInput.setText("");
+            if (val.equals("7925")) {
+                tabletText.append("BENAR! Kode morse terpecahkan.\n");
+                morseInput.setEnabled(false);
+                btnUlangi.setEnabled(false);
+                if (timerHolder[0] != null) timerHolder[0].stop();
+                Timer next = new Timer(800, ex -> { state = 8; room6(); });
+                next.setRepeats(false);
+                next.start();
+            } else {
+                tabletText.append("Salah. Coba lagi!\n");
+            }
+        });
+
+        // Mulai morse pertama kali
+        runMorse.run();
     }
 
     // ================================================================
@@ -914,10 +954,10 @@ public class EscapeRoomGUI extends JFrame {
         scenePanel.setDeskPosition(40, 255, 60, 60);
         scenePanel.setInteractHint("[ E ] Lihat Tablet");
         scenePanel.setInteractDialog("NARRATOR",
-            "--- PUZZLE 7: SAMBUNGKAN KABEL ---",
+            "--- PUZZLE 7: BALL SORT ---",
             "Tablet menyala untuk terakhir kalinya.",
-            "Kabel-kabel acak memenuhi layar.",
-            "Putar tiap bagian hingga jalur tersambung. Ini kesempatanmu keluar!"
+            "Bola-Bola acak memenuhi layar.",
+            "Masukkan semua bola hingga menjadi 1 warna yang sama!"
         );
 
         scenePanel.enableCollision(false);
@@ -976,7 +1016,6 @@ public class EscapeRoomGUI extends JFrame {
         print("");
         print("Raka tidak menunggu kalimat berikutnya. Dia berlari.");
         print("");
-        
         Timer t = new Timer(3000, e -> {
             centerPanel.removeAll();
             centerPanel.add(scenePanel, BorderLayout.CENTER);
@@ -1040,7 +1079,7 @@ public class EscapeRoomGUI extends JFrame {
             walls.add(new Rectangle(638, 468, 62, 6));
             walls.add(new Rectangle(396, 151, 46, 6));
             walls.add(new Rectangle(53, 516, 73, 3));
-            walls.add(new Rectangle(312, 82, 44, 6));
+walls.add(new Rectangle(312, 82, 44, 6));
 
             scenePanel.setDeskPosition(657, 484, 60, 60);
             scenePanel.setInteractHint("[ E ] Kabur!");
@@ -1053,7 +1092,6 @@ public class EscapeRoomGUI extends JFrame {
         });
         t.setRepeats(false);
         t.start();
-        
     }
 
     // ================================================================
@@ -1061,68 +1099,70 @@ public class EscapeRoomGUI extends JFrame {
     // ================================================================
 
     void ending() {
-        input.setEnabled(false);
-        EndingPanel endingPanel = new EndingPanel(this);
+        // Urutan ending:
+        //   1. ending.gif       — durasi sesuai panjang GIF
+        //   2. showEndingText() — tampil selama 4 detik
+        //   3. theend.gif       — tampil selama 8 detik
+        //   4. kembali ke main menu
         centerPanel.removeAll();
-        centerPanel.add(endingPanel, BorderLayout.CENTER);
+        centerPanel.add(scenePanel, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
-        endingPanel.play();
+        input.setEnabled(false);
+        scenePanel.enableFog(false);
+
+        // Langkah 1: putar ending.gif — sesuaikan durasinya dengan panjang GIF kamu
+        int endingGifDurationMs = 9000; // ganti sesuai durasi ending.gif
+        scenePanel.playEndingGif("/asset/bg/ending.gif", endingGifDurationMs, () -> {
+            // Langkah 2: tampilkan teks ending selama 4 detik
+            showEndingText();
+        });
     }
 
     /**
-     * Dipanggil oleh EndingPanel setelah GIF ending selesai.
-     * Menampilkan layar kredit dengan tombol Main Menu dan Exit.
+     * Teks penutup setelah ending.gif selesai.
+     * Ditampilkan selama 4 detik, lalu putar theend.gif 8 detik, kemudian main menu.
      */
-    void showCreditsScreen() {
+    void showEndingText() {
         showTextMode();
         clear();
-        print("══════════════════════════════════════════");
-        print("              TAMAT — THE END             ");
-        print("══════════════════════════════════════════");
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        print("        KAMU BERHASIL KABUR!          ");
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         print("");
-        print("  Raka berhasil meloloskan diri.");
-        print("  Dia tidak pernah kembali ke tempat itu.");
+        print("Raka berlari keluar rumah itu.");
+        print("Napasnya terengah, tapi dia tidak berhenti.");
+        print("Di kejauhan, jalan raya ramai terlihat.");
         print("");
-        print("══════════════════════════════════════════");
-        print("  COMDEV: Commit of Development");
-        print("  Kelompok 7 — DDP K1");
-        print("══════════════════════════════════════════");
+        print("Penjahat hanya berdiri di pagar.");
+        print("Dia tidak berani keluar.");
         print("");
+        print(" Aku akan pulang. Aku pasti baik-baik saja.");
+        print("");
+        print("Raka selamat.");
+        print("");
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        print("      TERIMA KASIH SUDAH BERMAIN!");
+        print("           — Kelompok 7 —");
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        input.setEnabled(false);
 
-        // Tombol Main Menu dan Exit
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-        btnPanel.setBackground(Color.BLACK);
-
-        JButton btnMenu = new JButton("⟳  Main Menu");
-        btnMenu.setBackground(new Color(30, 30, 30));
-        btnMenu.setForeground(new Color(50, 255, 50));
-        btnMenu.setFont(new Font("Monospaced", Font.BOLD, 14));
-        btnMenu.setFocusPainted(false);
-        btnMenu.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnMenu.addActionListener(e -> restartGame());
-
-        JButton btnExit = new JButton("✕  Keluar");
-        btnExit.setBackground(new Color(30, 30, 30));
-        btnExit.setForeground(new Color(255, 100, 100));
-        btnExit.setFont(new Font("Monospaced", Font.BOLD, 14));
-        btnExit.setFocusPainted(false);
-        btnExit.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnExit.addActionListener(e -> System.exit(0));
-
-        btnPanel.add(btnMenu);
-        btnPanel.add(btnExit);
-
-        // Tambahkan panel tombol ke bawah display
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setBackground(Color.BLACK);
-        wrapper.add(new JScrollPane(display), BorderLayout.CENTER);
-        wrapper.add(btnPanel, BorderLayout.SOUTH);
-
-        centerPanel.removeAll();
-        centerPanel.add(wrapper, BorderLayout.CENTER);
-        centerPanel.revalidate();
-        centerPanel.repaint();
+        // Langkah 3: setelah 4 detik tampilkan theend.gif selama 8 detik lalu ke main menu
+        Timer t = new Timer(4000, e -> {
+            centerPanel.removeAll();
+            centerPanel.add(scenePanel, BorderLayout.CENTER);
+            centerPanel.revalidate();
+            centerPanel.repaint();
+            scenePanel.playEndingGif("/asset/bg/theend.gif", 15000, () -> {
+                state = 0;
+                BacaKoran = false;
+                scenePanel.resetCharPos();
+                scenePanel.clearInteractDialog();
+                showMainMenu();
+            });
+        });
+        t.setRepeats(false);
+        t.start();
     }
 
     void gameOver() {
